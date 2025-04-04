@@ -3,14 +3,43 @@ import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { mockEvents } from "@/lib/mock-data"
+import { 
+  getDashboardStats, 
+  getRecentEvents, 
+  getPopularEvents,
+  getNextEvent
+} from "@/actions/admin"
 
-export default function AdminDashboardPage() {
-  // In a real app, these would be calculated from actual data
-  const totalEvents = mockEvents.length
-  const totalRegistrations = mockEvents.reduce((sum, event) => sum + event.attendees, 0)
-  const upcomingEvents = mockEvents.filter((event) => new Date(event.date) > new Date()).length
-  const completedEvents = totalEvents - upcomingEvents
+// This component will use React Server Components to fetch data
+export default async function AdminDashboardPage() {
+  // Fetch all the data we need from server actions
+  const [
+    dashboardStats,
+    recentEvents,
+    popularEvents,
+    nextEvent
+  ] = await Promise.all([
+    getDashboardStats(),
+    getRecentEvents(5),
+    getPopularEvents(5),
+    getNextEvent()
+  ]);
+
+  const {
+    totalEvents,
+    upcomingEvents,
+    totalRegistrations,
+  } = dashboardStats;
+
+  // Calculate completed events
+  const completedEvents = totalEvents - upcomingEvents;
+  
+  // Calculate days until next event
+  let nextEventText = 'No upcoming events';
+  if (nextEvent?.date) {
+    const daysUntil = Math.ceil((new Date(nextEvent.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    nextEventText = `Next event in ${daysUntil} day${daysUntil !== 1 ? 's' : ''}`;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -43,7 +72,7 @@ export default function AdminDashboardPage() {
           <CardContent>
             <div className="text-3xl font-bold">{totalRegistrations}</div>
             <p className="text-xs text-muted-foreground">
-              {(totalRegistrations / totalEvents).toFixed(1)} avg. per event
+              {totalEvents > 0 ? (totalRegistrations / totalEvents).toFixed(1) : 0} avg. per event
             </p>
           </CardContent>
         </Card>
@@ -54,7 +83,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{upcomingEvents}</div>
-            <p className="text-xs text-muted-foreground">Next event in 3 days</p>
+            <p className="text-xs text-muted-foreground">{nextEventText}</p>
           </CardContent>
         </Card>
         <Card className="stats-card">
@@ -65,7 +94,7 @@ export default function AdminDashboardPage() {
           <CardContent>
             <div className="text-3xl font-bold">{completedEvents}</div>
             <p className="text-xs text-muted-foreground">
-              {((completedEvents / totalEvents) * 100).toFixed(0)}% completion rate
+              {totalEvents > 0 ? ((completedEvents / totalEvents) * 100).toFixed(0) : 0}% completion rate
             </p>
           </CardContent>
         </Card>
@@ -79,25 +108,29 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockEvents.slice(0, 5).map((event) => (
-                <div
-                  key={event.id}
-                  className="flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-muted/50"
-                >
-                  <div>
-                    <p className="font-medium">{event.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(event.date).toLocaleDateString()} • {event.time}
-                    </p>
+              {recentEvents.length > 0 ? (
+                recentEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    className="flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-muted/50"
+                  >
+                    <div>
+                      <p className="font-medium">{event.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(event.date).toLocaleDateString()} • {event.time}
+                      </p>
+                    </div>
+                    <Link href={`/admin/events/${event.id}`}>
+                      <Button variant="ghost" size="icon" className="rounded-full">
+                        <ArrowUpRight className="h-4 w-4" />
+                        <span className="sr-only">View event</span>
+                      </Button>
+                    </Link>
                   </div>
-                  <Link href={`/admin/events/${event.id}`}>
-                    <Button variant="ghost" size="icon" className="rounded-full">
-                      <ArrowUpRight className="h-4 w-4" />
-                      <span className="sr-only">View event</span>
-                    </Button>
-                  </Link>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No events created yet</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -109,11 +142,8 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockEvents
-                .slice()
-                .sort((a, b) => b.attendees - a.attendees)
-                .slice(0, 5)
-                .map((event) => (
+              {popularEvents.length > 0 ? (
+                popularEvents.map((event) => (
                   <div
                     key={event.id}
                     className="flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-muted/50"
@@ -129,7 +159,10 @@ export default function AdminDashboardPage() {
                       </Button>
                     </Link>
                   </div>
-                ))}
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No events with registrations yet</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -137,4 +170,3 @@ export default function AdminDashboardPage() {
     </div>
   )
 }
-
