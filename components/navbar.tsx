@@ -1,41 +1,55 @@
 "use client"
 
-import { Menu, Moon, Sun } from "lucide-react"
+import { Menu, Moon, Sun, User, LogOut, Settings, LayoutDashboard } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
-import { useState } from "react"
+import { signOut } from "next-auth/react"
+import { useSession } from 'next-auth/react';
 
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator,
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 const navigation = [
   { name: "Home", href: "/" },
   { name: "My Events", href: "/my-events" },
-  { name: "Profile", href: "/profile" },
 ]
 
 const adminNavigation = [
-  { name: "Dashboard", href: "/admin" },
+  { name: "Dashboard", href: "/admin", icon: <LayoutDashboard className="h-4 w-4 mr-2" /> },
   { name: "Manage Events", href: "/admin/events" },
 ]
 
-export default function Navbar() {
-  const [isSignedIn, setIsSignedIn] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
+export default function Navbar({user}) {
+  const session = useSession();
   const pathname = usePathname()
   const { setTheme, theme } = useTheme()
+  const router = useRouter()
+  const isSignedIn = !!user
+  const isAdmin = user?.role === "ADMIN"
 
-  // Toggle sign in status for demo purposes
-  const toggleSignIn = () => {
-    setIsSignedIn(!isSignedIn)
-  }
-
-  // Toggle admin status for demo purposes
-  const toggleAdmin = () => {
-    setIsAdmin(!isAdmin)
+  // Handle sign out using Auth.js v5
+  const handleSignOut = async () => {
+    try {
+      // Add a callbackUrl to specify where to redirect after signout
+      await signOut({ 
+        redirect: true, // Prevent automatic redirect
+        callbackUrl: '/' // or any path you want to redirect to
+      })
+      // Note: No need for router.refresh() if using redirect: true
+    } catch (error) {
+      console.error("Logout failed:", error)
+      // Consider adding fallback behavior here
+    }
   }
 
   return (
@@ -64,7 +78,11 @@ export default function Navbar() {
               {isAdmin &&
                 adminNavigation.map((item) => (
                   <li key={item.name}>
-                    <Link href={item.href} className={cn("nav-link", pathname === item.href ? "nav-link-active" : "")}>
+                    <Link href={item.href} className={cn(
+                      "nav-link flex items-center", 
+                      pathname === item.href ? "nav-link-active" : ""
+                    )}>
+                      {item.icon && item.icon}
                       {item.name}
                     </Link>
                   </li>
@@ -73,7 +91,7 @@ export default function Navbar() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           {/* Theme toggle */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -90,17 +108,62 @@ export default function Navbar() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Demo controls */}
-          <div className="hidden items-center gap-2 rounded-full border p-1 md:flex">
-            <Button variant="ghost" size="sm" onClick={toggleSignIn} className="h-7 rounded-full text-xs">
-              {isSignedIn ? "Sign Out (Demo)" : "Sign In (Demo)"}
-            </Button>
-            {isSignedIn && (
-              <Button variant="ghost" size="sm" onClick={toggleAdmin} className="h-7 rounded-full text-xs">
-                {isAdmin ? "User Mode (Demo)" : "Admin Mode (Demo)"}
+          {/* User authentication */}
+          {isSignedIn ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {user.name ? user.name[0].toUpperCase() : <User className="h-4 w-4" />}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-2 py-1.5 text-sm font-medium">{user.name || user.email}</div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex w-full cursor-pointer items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="flex w-full cursor-pointer items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                {isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <div className="px-2 py-1.5 text-sm font-medium">Admin</div>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="flex w-full cursor-pointer items-center">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="hidden md:flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/auth/signin">Sign In</Link>
               </Button>
-            )}
-          </div>
+              <Button size="sm" asChild>
+                <Link href="/auth/signup">Register</Link>
+              </Button>
+            </div>
+          )}
 
           {/* Mobile menu */}
           <Sheet>
@@ -136,23 +199,45 @@ export default function Navbar() {
                       key={item.name}
                       href={item.href}
                       className={cn(
-                        "rounded-lg px-3 py-2 transition-colors hover:bg-muted",
+                        "rounded-lg px-3 py-2 transition-colors hover:bg-muted flex items-center",
                         pathname === item.href ? "bg-primary/10 font-medium text-primary" : "text-foreground/60",
                       )}
                     >
+                      {item.icon && item.icon}
                       {item.name}
                     </Link>
                   ))}
-                <div className="mt-4 space-y-2">
-                  <Button variant="outline" size="sm" onClick={toggleSignIn} className="w-full">
-                    {isSignedIn ? "Sign Out (Demo)" : "Sign In (Demo)"}
-                  </Button>
-                  {isSignedIn && (
-                    <Button variant="outline" size="sm" onClick={toggleAdmin} className="w-full">
-                      {isAdmin ? "User Mode (Demo)" : "Admin Mode (Demo)"}
+                
+                {!isSignedIn ? (
+                  <div className="mt-4 space-y-2">
+                    <Button variant="outline" size="sm" asChild className="w-full">
+                      <Link href="/auth/signin">Sign In</Link>
                     </Button>
-                  )}
-                </div>
+                    <Button size="sm" asChild className="w-full">
+                      <Link href="/auth/signup">Register</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mt-4 space-y-2">
+                    <Link
+                      href="/profile"
+                      className="flex items-center rounded-lg px-3 py-2 transition-colors hover:bg-muted"
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                    <Link
+                      href="/settings"
+                      className="flex items-center rounded-lg px-3 py-2 transition-colors hover:bg-muted"
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
+                    <Button variant="destructive" size="sm" onClick={handleSignOut} className="w-full">
+                      Log Out
+                    </Button>
+                  </div>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
@@ -161,4 +246,3 @@ export default function Navbar() {
     </header>
   )
 }
-

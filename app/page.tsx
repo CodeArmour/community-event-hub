@@ -27,7 +27,7 @@ export default function HomePage() {
                 className="h-12 border-white/20 bg-white/10 pl-10 text-white placeholder:text-white/70 focus:border-white/30 focus:bg-white/20"
               />
             </div>
-            <Link href="/auth/signin">
+            <Link href="/auth/signin" className="z-10">
               <Button size="lg" className="button-gradient w-full sm:w-auto" variant="default">
                 Get Started
               </Button>
