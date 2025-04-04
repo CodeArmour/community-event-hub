@@ -1,25 +1,41 @@
-import { Calendar, Clock, MapPin, Users } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
+"use client";
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import type { Event } from "@/lib/types"
+import { Calendar, Clock, MapPin, Users } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import type { Event } from "@/lib/types";
+import { useSession } from "next-auth/react";
 
 interface EventCardProps {
-  event: Event
-  isSignedIn: boolean
+  event: Event;
 }
 
-export function EventCard({ event, isSignedIn }: EventCardProps) {
-  const { id, title, description, date, time, location, image, category, attendees } = event
+export function EventCard({ event }: EventCardProps) {
+  const {
+    id,
+    title,
+    description,
+    date,
+    time,
+    location,
+    image,
+    category,
+    attendees,
+  } = event;
+
+  // Get session directly in the component to ensure reactivity
+  const { data: sessionData, status } = useSession();
+  const isSignedIn = status === "authenticated";
 
   // Format date
   const formattedDate = new Date(date).toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
-  })
+  });
 
   return (
     <div className="event-card group">
@@ -43,7 +59,9 @@ export function EventCard({ event, isSignedIn }: EventCardProps) {
           <Clock className="h-3.5 w-3.5" />
           <span>{time}</span>
         </div>
-        <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">{description}</p>
+        <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
+          {description}
+        </p>
         <div className="mb-4 space-y-1">
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <MapPin className="h-3.5 w-3.5" />
@@ -55,16 +73,22 @@ export function EventCard({ event, isSignedIn }: EventCardProps) {
           </div>
         </div>
         {isSignedIn ? (
-          <Button className="button-gradient w-full rounded-full">Register</Button>
+          <Link href={`/events/${id}/register`} className="w-full">
+            <Button className="button-gradient w-full rounded-full">
+              Register
+            </Button>
+          </Link>
         ) : (
           <Link href="/auth/signin" className="w-full">
-            <Button variant="outline" className="button-outline-gradient w-full rounded-full">
+            <Button
+              variant="outline"
+              className="button-outline-gradient w-full rounded-full"
+            >
               Sign in to register
             </Button>
           </Link>
         )}
       </div>
     </div>
-  )
+  );
 }
-

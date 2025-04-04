@@ -29,7 +29,13 @@ const adminNavigation = [
   { name: "Manage Events", href: "/admin/events" },
 ]
 
-export default function Navbar({user}) {
+interface User {
+  name?: string;
+  email?: string;
+  role?: "ADMIN" | "USER";
+}
+
+export default function Navbar({ user }: { user: User }) {
   const session = useSession();
   const pathname = usePathname()
   const { setTheme, theme } = useTheme()
