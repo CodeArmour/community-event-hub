@@ -73,7 +73,7 @@ export function EventCard({ event }: EventCardProps) {
           </div>
         </div>
         {isSignedIn ? (
-          <Link href={`/events/${id}/register`} className="w-full">
+          <Link href={`/events/${id}`} className="w-full">
             <Button className="button-gradient w-full rounded-full">
               Register
             </Button>
