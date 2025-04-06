@@ -1,13 +1,15 @@
 "use client";
 
-import { Calendar, Clock, MapPin, Users } from "lucide-react";
+import { Calendar, Clock, MapPin, Ticket, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Event } from "@/lib/types";
 import { useSession } from "next-auth/react";
+import { checkRegistrationStatus } from "@/actions/registration";
 
 interface EventCardProps {
   event: Event;
@@ -29,6 +31,40 @@ export function EventCard({ event }: EventCardProps) {
   // Get session directly in the component to ensure reactivity
   const { data: sessionData, status } = useSession();
   const isSignedIn = status === "authenticated";
+  
+  // State to track if user is registered for this event
+  const [registrationStatus, setRegistrationStatus] = useState({
+    isRegistered: false,
+    isLoading: true,
+  });
+
+  // Check if user is registered for this event
+  useEffect(() => {
+    const checkIfRegistered = async () => {
+      if (isSignedIn && id) {
+        try {
+          const status = await checkRegistrationStatus(id);
+          setRegistrationStatus({
+            isRegistered: !!status?.isRegistered,
+            isLoading: false,
+          });
+        } catch (error) {
+          console.error("Error checking registration status:", error);
+          setRegistrationStatus({
+            isRegistered: false,
+            isLoading: false,
+          });
+        }
+      } else {
+        setRegistrationStatus({
+          isRegistered: false,
+          isLoading: false,
+        });
+      }
+    };
+
+    checkIfRegistered();
+  }, [isSignedIn, id]);
 
   // Format date
   const formattedDate = new Date(date).toLocaleDateString("en-US", {
@@ -72,12 +108,31 @@ export function EventCard({ event }: EventCardProps) {
             <span>{attendees} attending</span>
           </div>
         </div>
+        
         {isSignedIn ? (
-          <Link href={`/events/${id}`} className="w-full">
-            <Button className="button-gradient w-full rounded-full">
-              Register
+          registrationStatus.isLoading ? (
+            <Button className="w-full rounded-full" disabled>
+              Loading...
             </Button>
-          </Link>
+          ) : registrationStatus.isRegistered ? (
+            <div className="space-y-2 w-full">
+              <Badge className="w-full justify-center py-1.5 bg-green-600 hover:bg-green-700 text-white">
+                <Ticket className="h-3.5 w-3.5 mr-1" />
+                Registered
+              </Badge>
+              <Link href={`/events/${id}`} className="w-full">
+                <Button variant="outline" className="w-full rounded-full">
+                  View Details
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <Link href={`/events/${id}`} className="w-full">
+              <Button className="button-gradient w-full rounded-full">
+                Register
+              </Button>
+            </Link>
+          )
         ) : (
           <Link href="/auth/signin" className="w-full">
             <Button

@@ -169,7 +169,7 @@ export default function EventPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Link href="/events" className="mb-6 inline-flex items-center text-sm text-muted-foreground hover:text-primary">
+      <Link href="/" className="mb-6 inline-flex items-center text-sm text-muted-foreground hover:text-primary">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to events
       </Link>

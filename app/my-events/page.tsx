@@ -1,20 +1,60 @@
 "use client"
 
-import { useState } from "react"
+import { SetStateAction, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 
 import EventList from "@/components/event-list"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { mockEvents } from "@/lib/mock-data"
+import { getUserRegistrations } from "@/actions/registration"
+import { Loader2 } from "lucide-react"
 
 export default function MyEventsPage() {
-  // In a real app, this would be fetched from an API
-  const [registeredEvents] = useState(mockEvents.slice(0, 3))
-  const [pastEvents] = useState(mockEvents.slice(3, 5))
+  const router = useRouter()
+  const [registeredEvents, setRegisteredEvents] = useState([])
+  const [pastEvents, setPastEvents] = useState([])
+  const [recommendedEvents, setRecommendedEvents] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("upcoming")
 
-  // In a real app, these would be AI-generated recommendations based on user preferences
-  const recommendedEvents = mockEvents.slice(5, 8)
+  useEffect(() => {
+    const fetchRegistrations = async () => {
+      try {
+        setLoading(true)
+        
+        // Fetch registered events (status: REGISTERED)
+        const registeredData = await getUserRegistrations("REGISTERED")
+        const registeredEventsData = registeredData.registrations.map(reg => reg.event)
+        setRegisteredEvents(registeredEventsData)
+        
+        // Fetch attended events (status: ATTENDED)
+        const attendedData = await getUserRegistrations("ATTENDED")
+        const attendedEventsData = attendedData.registrations.map(reg => reg.event)
+        setPastEvents(attendedEventsData)
+        
+        // In a real app, this would be a separate API call for AI recommendations
+        // For now, we'll assume another endpoint or mock this data
+        // This could be based on user interests or similar events to what they've attended
+        setRecommendedEvents([]); // Replace with real recommendation API call
+        
+        setLoading(false)
+      } catch (error) {
+        console.error("Error fetching registrations:", error)
+        setLoading(false)
+      }
+    }
+    
+    fetchRegistrations()
+  }, [])
+
+  const handleTabChange = (value: SetStateAction<string>) => {
+    setActiveTab(value)
+  }
+
+  const handleViewTickets = (event: { id: any }) => {
+    router.push(`/dashboard/tickets/${event.id}`)
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -23,7 +63,7 @@ export default function MyEventsPage() {
         <p className="text-muted-foreground">View and manage your registered events</p>
       </div>
 
-      <Tabs defaultValue="upcoming" className="mb-8">
+      <Tabs defaultValue="upcoming" className="mb-8" onValueChange={handleTabChange}>
         <TabsList className="w-full justify-start rounded-full border p-1 sm:w-auto">
           <TabsTrigger
             value="upcoming"
@@ -38,12 +78,22 @@ export default function MyEventsPage() {
             Past
           </TabsTrigger>
         </TabsList>
+        
         <TabsContent value="upcoming">
-          {registeredEvents.length > 0 ? (
+          {loading ? (
+            <div className="flex h-40 items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : registeredEvents.length > 0 ? (
             <div className="space-y-6">
-              <EventList events={registeredEvents} isSignedIn={true} />
+              <EventList events={registeredEvents} />
               <div className="flex justify-center">
-                <Button className="button-gradient rounded-full">View QR Tickets</Button>
+                <Button 
+                  className="button-gradient rounded-full"
+                  onClick={() => router.push("/dashboard/tickets")}
+                >
+                  View QR Tickets
+                </Button>
               </div>
             </div>
           ) : (
@@ -52,9 +102,14 @@ export default function MyEventsPage() {
             </div>
           )}
         </TabsContent>
+        
         <TabsContent value="past">
-          {pastEvents.length > 0 ? (
-            <EventList events={pastEvents} isSignedIn={true} />
+          {loading ? (
+            <div className="flex h-40 items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : pastEvents.length > 0 ? (
+            <EventList events={pastEvents}/>
           ) : (
             <div className="flex h-40 items-center justify-center rounded-lg border border-dashed">
               <p className="text-muted-foreground">You haven&apos;t attended any past events</p>
@@ -77,10 +132,19 @@ export default function MyEventsPage() {
           <CardDescription>Events you might be interested in based on your preferences</CardDescription>
         </CardHeader>
         <CardContent>
-          <EventList events={recommendedEvents} isSignedIn={true} />
+          {loading ? (
+            <div className="flex h-40 items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : recommendedEvents.length > 0 ? (
+            <EventList events={recommendedEvents} />
+          ) : (
+            <div className="flex h-40 items-center justify-center rounded-lg border border-dashed">
+              <p className="text-muted-foreground">No recommendations available yet</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
   )
 }
-
