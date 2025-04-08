@@ -1,10 +1,10 @@
 import type React from "react";
 import "@/app/globals.css";
-import { getUserSession } from "@/lib/auth";
-import { SessionProvider } from 'next-auth/react';
 import { Inter } from "next/font/google";
 import Navbar from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/components/auth-provider";
+import { getUserSession } from "@/lib/auth";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,13 +14,14 @@ export const metadata = {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // We'll still get the session for the initial server render
   const session = await getUserSession();
   const user = session?.user || null;
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <SessionProvider session={session}>
+        <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <div className="flex min-h-screen flex-col">
               <Navbar user={user}/>
@@ -40,7 +41,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </footer>
             </div>
           </ThemeProvider>
-        </SessionProvider>
+        </AuthProvider>
       </body>
     </html>
   )

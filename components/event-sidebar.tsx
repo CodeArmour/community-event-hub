@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Calendar, Clock, MapPin, Users } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
 interface EventSidebarProps {
@@ -18,6 +18,7 @@ interface EventSidebarProps {
   }
   isSignedIn: boolean
   isRegistered: boolean
+  isAuthLoading: boolean 
   onRegister: () => void
   onCancelRegistration: () => void
 }
@@ -26,11 +27,23 @@ export default function EventSidebar({
   event, 
   isSignedIn, 
   isRegistered, 
+  isAuthLoading,
   onRegister, 
   onCancelRegistration 
 }: EventSidebarProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-
+  
+  // Debug logging
+  useEffect(() => {
+    console.log("EventSidebar props:", {
+      isSignedIn,
+      isRegistered,
+      isAuthLoading,
+      attendees: event.attendees,
+      capacity: event.capacity
+    });
+  }, [isSignedIn, isRegistered, isAuthLoading, event.attendees, event.capacity]);
+  
   // Format date
   const eventDate = event.date instanceof Date ? event.date : new Date(event.date)
   const formattedDate = eventDate.toLocaleDateString("en-US", {
@@ -44,6 +57,7 @@ export default function EventSidebar({
   const isFull = spotsRemaining <= 0;
 
   const handleRegister = async () => {
+    console.log("Register button clicked");
     setIsSubmitting(true)
     try {
       await onRegister()
@@ -53,6 +67,7 @@ export default function EventSidebar({
   }
 
   const handleCancelRegistration = async () => {
+    console.log("Cancel registration button clicked");
     setIsSubmitting(true)
     try {
       await onCancelRegistration()
@@ -60,6 +75,14 @@ export default function EventSidebar({
       setIsSubmitting(false)
     }
   }
+
+  // Debug rendering state
+  console.log("Rendering EventSidebar UI with:", {
+    isSignedIn,
+    isRegistered,
+    isAuthLoading,
+    isSubmitting
+  });
 
   return (
     <div>
@@ -106,8 +129,12 @@ export default function EventSidebar({
             </div>
           </div>
 
-          <div className="pt-4">
-            {isSignedIn ? (
+          <div className="pt-4" id="registration-area">
+            {isAuthLoading ? (
+              <Button disabled className="w-full rounded-full">
+                Loading...
+              </Button>
+            ) : isSignedIn ? (
               isRegistered ? (
                 <div className="space-y-4">
                   <div className="rounded-lg bg-green-50 p-4 text-center dark:bg-green-900/20">
@@ -119,7 +146,7 @@ export default function EventSidebar({
                   
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="outline" className="w-full rounded-full text-red-500 hover:bg-red-50 hover:text-red-600">
+                      <Button variant="outline" className="w-full rounded-full text-red-500 hover:bg-red-50 hover:text-red-600" data-testid="cancel-button">
                         Cancel Registration
                       </Button>
                     </AlertDialogTrigger>
@@ -136,6 +163,7 @@ export default function EventSidebar({
                           onClick={handleCancelRegistration}
                           className="bg-red-500 hover:bg-red-600"
                           disabled={isSubmitting}
+                          data-testid="confirm-cancel-button"
                         >
                           {isSubmitting ? "Cancelling..." : "Yes, Cancel Registration"}
                         </AlertDialogAction>
@@ -152,13 +180,14 @@ export default function EventSidebar({
                   onClick={handleRegister} 
                   className="button-gradient w-full rounded-full"
                   disabled={isSubmitting}
+                  data-testid="register-button"
                 >
                   {isSubmitting ? "Registering..." : "Register for Event"}
                 </Button>
               )
             ) : (
               <Link href="/auth/signin" className="w-full">
-                <Button variant="outline" className="button-outline-gradient w-full rounded-full">
+                <Button variant="outline" className="button-outline-gradient w-full rounded-full" data-testid="signin-button">
                   Sign in to register
                 </Button>
               </Link>

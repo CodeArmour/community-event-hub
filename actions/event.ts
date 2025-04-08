@@ -127,7 +127,7 @@ export async function getEvents(
   query = "",
   category = "",
   page = 1,
-  limit = 10
+  limit = 20
 ) {
   const skip = (page - 1) * limit;
 
@@ -186,7 +186,7 @@ export async function getEvents(
 
 export async function getEventById(id: string) {
   try {
-    return await prisma.event.findUnique({
+    const event = await prisma.event.findUnique({
       where: { id },
       include: {
         creator: {
@@ -194,8 +194,18 @@ export async function getEventById(id: string) {
             name: true,
           },
         },
+        _count: {
+          select: { registrations: true },
+        },
       },
     });
+
+    if (!event) return null;
+
+    return {
+      ...event,
+      attendeesCount: event._count.registrations,
+    };
   } catch (error) {
     throw new Error("Failed to fetch event");
   }

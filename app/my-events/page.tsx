@@ -4,6 +4,7 @@ import { SetStateAction, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import EventList from "@/components/event-list"
+import EventCalendar from "@/components/event-calendar" // Import the calendar component
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -17,6 +18,7 @@ export default function MyEventsPage() {
   const [recommendedEvents, setRecommendedEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("upcoming")
+  const [viewType, setViewType] = useState("list") // Add view type state (list or calendar)
 
   useEffect(() => {
     const fetchRegistrations = async () => {
@@ -52,9 +54,16 @@ export default function MyEventsPage() {
     setActiveTab(value)
   }
 
+  const handleViewChange = (value: SetStateAction<string>) => {
+    setViewType(value)
+  }
+
   const handleViewTickets = (event: { id: any }) => {
     router.push(`/dashboard/tickets/${event.id}`)
   }
+
+  // Get the appropriate events based on the selected tab
+  const eventsToDisplay = activeTab === "upcoming" ? registeredEvents : pastEvents
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -63,7 +72,8 @@ export default function MyEventsPage() {
         <p className="text-muted-foreground">View and manage your registered events</p>
       </div>
 
-      <Tabs defaultValue="upcoming" className="mb-8" onValueChange={handleTabChange}>
+      {/* First level tabs: Upcoming/Past */}
+      <Tabs defaultValue="upcoming" className="mb-4" onValueChange={handleTabChange}>
         <TabsList className="w-full justify-start rounded-full border p-1 sm:w-auto">
           <TabsTrigger
             value="upcoming"
@@ -78,45 +88,58 @@ export default function MyEventsPage() {
             Past
           </TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="upcoming">
-          {loading ? (
-            <div className="flex h-40 items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : registeredEvents.length > 0 ? (
-            <div className="space-y-6">
-              <EventList events={registeredEvents} />
-              <div className="flex justify-center">
-                <Button 
-                  className="button-gradient rounded-full"
-                  onClick={() => router.push("/dashboard/tickets")}
-                >
-                  View QR Tickets
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex h-40 items-center justify-center rounded-lg border border-dashed">
-              <p className="text-muted-foreground">You haven&apos;t registered for any upcoming events</p>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="past">
-          {loading ? (
-            <div className="flex h-40 items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : pastEvents.length > 0 ? (
-            <EventList events={pastEvents}/>
-          ) : (
-            <div className="flex h-40 items-center justify-center rounded-lg border border-dashed">
-              <p className="text-muted-foreground">You haven&apos;t attended any past events</p>
-            </div>
-          )}
-        </TabsContent>
       </Tabs>
+
+      {/* Second level tabs: List View/Calendar View */}
+      <Tabs defaultValue="list" className="mb-4" onValueChange={handleViewChange}>
+        <TabsList className="w-full justify-start rounded-full border p-1 sm:w-auto">
+          <TabsTrigger
+            value="list"
+            className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-white"
+          >
+            List View
+          </TabsTrigger>
+          <TabsTrigger
+            value="calendar"
+            className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-white"
+          >
+            Calendar View
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {loading ? (
+        <div className="flex h-40 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : eventsToDisplay.length > 0 ? (
+        <div className="space-y-6">
+          {viewType === "list" ? (
+            <EventList events={eventsToDisplay} />
+          ) : (
+            <EventCalendar events={eventsToDisplay} />
+          )}
+          
+          {activeTab === "upcoming" && (
+            <div className="flex justify-center">
+              <Button 
+                className="button-gradient rounded-full"
+                onClick={() => router.push("/dashboard/tickets")}
+              >
+                View QR Tickets
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex h-40 items-center justify-center rounded-lg border border-dashed">
+          <p className="text-muted-foreground">
+            {activeTab === "upcoming"
+              ? "You haven't registered for any upcoming events"
+              : "You haven't attended any past events"}
+          </p>
+        </div>
+      )}
 
       {/* Recommended Events Section */}
       <Card className="glass-card mt-8 overflow-visible">
