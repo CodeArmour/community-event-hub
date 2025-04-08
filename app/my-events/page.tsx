@@ -1,10 +1,10 @@
 "use client"
 
-import { SetStateAction, useEffect, useState } from "react"
+import { SetStateAction, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import EventList from "@/components/event-list"
-import EventCalendar from "@/components/event-calendar" // Import the calendar component
+import EventCalendar from "@/components/event-calendar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -18,52 +18,59 @@ export default function MyEventsPage() {
   const [recommendedEvents, setRecommendedEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("upcoming")
-  const [viewType, setViewType] = useState("list") // Add view type state (list or calendar)
+  const [viewType, setViewType] = useState("list")
+  const [page, setPage] = useState(1)
+  const EVENTS_PER_PAGE = 8
 
   useEffect(() => {
     const fetchRegistrations = async () => {
       try {
         setLoading(true)
-        
-        // Fetch registered events (status: REGISTERED)
+
         const registeredData = await getUserRegistrations("REGISTERED")
         const registeredEventsData = registeredData.registrations.map(reg => reg.event)
         setRegisteredEvents(registeredEventsData)
-        
-        // Fetch attended events (status: ATTENDED)
+
         const attendedData = await getUserRegistrations("ATTENDED")
         const attendedEventsData = attendedData.registrations.map(reg => reg.event)
         setPastEvents(attendedEventsData)
-        
-        // In a real app, this would be a separate API call for AI recommendations
-        // For now, we'll assume another endpoint or mock this data
-        // This could be based on user interests or similar events to what they've attended
-        setRecommendedEvents([]); // Replace with real recommendation API call
-        
+
+        setRecommendedEvents([])
         setLoading(false)
       } catch (error) {
         console.error("Error fetching registrations:", error)
         setLoading(false)
       }
     }
-    
+
     fetchRegistrations()
   }, [])
 
   const handleTabChange = (value: SetStateAction<string>) => {
     setActiveTab(value)
+    setPage(1)
   }
 
   const handleViewChange = (value: SetStateAction<string>) => {
     setViewType(value)
+    setPage(1)
   }
 
   const handleViewTickets = (event: { id: any }) => {
     router.push(`/dashboard/tickets/${event.id}`)
   }
 
-  // Get the appropriate events based on the selected tab
   const eventsToDisplay = activeTab === "upcoming" ? registeredEvents : pastEvents
+
+  const paginatedEvents = useMemo(() => {
+    const start = (page - 1) * EVENTS_PER_PAGE
+    const end = start + EVENTS_PER_PAGE
+    return eventsToDisplay.slice(start, end)
+  }, [eventsToDisplay, page])
+
+  const totalPages = useMemo(() => {
+    return Math.ceil(eventsToDisplay.length / EVENTS_PER_PAGE)
+  }, [eventsToDisplay])
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -72,7 +79,6 @@ export default function MyEventsPage() {
         <p className="text-muted-foreground">View and manage your registered events</p>
       </div>
 
-      {/* First level tabs: Upcoming/Past */}
       <Tabs defaultValue="upcoming" className="mb-4" onValueChange={handleTabChange}>
         <TabsList className="w-full justify-start rounded-full border p-1 sm:w-auto">
           <TabsTrigger
@@ -90,7 +96,6 @@ export default function MyEventsPage() {
         </TabsList>
       </Tabs>
 
-      {/* Second level tabs: List View/Calendar View */}
       <Tabs defaultValue="list" className="mb-4" onValueChange={handleViewChange}>
         <TabsList className="w-full justify-start rounded-full border p-1 sm:w-auto">
           <TabsTrigger
@@ -115,11 +120,26 @@ export default function MyEventsPage() {
       ) : eventsToDisplay.length > 0 ? (
         <div className="space-y-6">
           {viewType === "list" ? (
-            <EventList events={eventsToDisplay} />
+            <EventList events={paginatedEvents} />
           ) : (
-            <EventCalendar events={eventsToDisplay} />
+            <EventCalendar events={paginatedEvents} />
           )}
-          
+
+          {totalPages > 1 && (
+            <div className="mt-6 flex justify-center gap-2">
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <Button
+                  key={i}
+                  size="sm"
+                  variant={page === i + 1 ? "default" : "outline"}
+                  onClick={() => setPage(i + 1)}
+                >
+                  {i + 1}
+                </Button>
+              ))}
+            </div>
+          )}
+
           {activeTab === "upcoming" && (
             <div className="flex justify-center">
               <Button 
@@ -141,7 +161,6 @@ export default function MyEventsPage() {
         </div>
       )}
 
-      {/* Recommended Events Section */}
       <Card className="glass-card mt-8 overflow-visible">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

@@ -17,7 +17,7 @@ export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [tab, setTab] = useState("upcoming");
   const [page, setPage] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 8;
 
   // Get session with status to trigger re-renders
   const { data: sessionData, status } = useSession();
