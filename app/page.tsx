@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getEvents } from "@/actions/event";
 import type { Event } from "@/lib/types";
 import { useSession } from "next-auth/react";
+import { getCurrentUserForProfile } from "@/actions/profile";
+
 
 export default function HomePage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -38,6 +40,15 @@ export default function HomePage() {
     // Apply tab filters
     if (tab === "upcoming") {
       list = list.filter((e) => new Date(e.date) > now);
+    }
+    if (tab === "popular") {
+      list = list.filter((e) => new Date(e.date) > now);
+      list = list.filter((e) => e.attendees > 0);
+      list = list.sort((a, b) => b.attendees - a.attendees).slice(0, 10);
+    }
+    if (tab === "nearby") {
+      list = list.filter((e) => new Date(e.date) > now);
+      list = list.filter((e) => e.location === sessionData?.user?.location);
     }
 
     // Apply search

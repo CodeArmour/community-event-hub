@@ -13,6 +13,7 @@ export default {
     
           if (token.role && session.user) {
             session.user.role = token.role as "USER" | "ADMIN";
+            session.user.location = typeof token.location === "string" ? token.location : undefined;
           }
     
           return session;
@@ -25,6 +26,7 @@ export default {
           if (!user) return token;
     
           token.role = user.role;
+          token.location = user.location || undefined;
     
           return token;
         }
