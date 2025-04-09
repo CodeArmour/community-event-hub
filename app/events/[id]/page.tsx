@@ -84,17 +84,21 @@ function EventPageContent({ params }: { params: { id: string } }) {
   }, [status, session, params.id]);
 
   // Event images
-  const eventImages = event
-    ? [
-        event.image ||
+  const eventImages = event?.images?.length
+  ? event.images.map((img: any) => ({
+      src: img.url,
+      alt: img.caption || event.title,
+    }))
+  : [
+      {
+        src:
+          event?.image ||
           `/placeholder.svg?height=400&width=600&text=${encodeURIComponent(
-            event.title
+            event?.title || "Event"
           )}`,
-        `/placeholder.svg?height=400&width=600&text=Event+Photo+1`,
-        `/placeholder.svg?height=400&width=600&text=Event+Photo+2`,
-        `/placeholder.svg?height=400&width=600&text=Event+Photo+3`,
-      ]
-    : [];
+        alt: event?.title || "Event",
+      },
+    ];
 
   const handleRegister = async () => {
     if (status !== "authenticated" || !session) {
@@ -226,7 +230,8 @@ function EventPageContent({ params }: { params: { id: string } }) {
           />
 
           {/* Event Images Carousel */}
-          <EventImageCarousel images={eventImages} title={event.title} />
+          <EventImageCarousel images={eventImages} />
+
 
           {/* Event Description */}
           <EventDescription event={event} />

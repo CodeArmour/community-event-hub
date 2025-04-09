@@ -1,4 +1,3 @@
-// actions/event.ts
 "use server";
 
 import * as z from "zod";
@@ -8,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { EventSchema } from "@/schemas/event";
 import { Prisma } from "@prisma/client";
 
-export async function createEvent(values: z.infer<typeof EventSchema>) {
+export async function createEvent(values: z.infer<typeof EventSchema> & { images?: Array<{ url: string, caption?: string, isPrimary: boolean, position: number }> }) {
   const session = await auth();
 
   if (!session?.user?.id || session.user.role !== "ADMIN") {
@@ -33,30 +32,45 @@ export async function createEvent(values: z.infer<typeof EventSchema>) {
   } = validatedFields.data;
 
   try {
-    await prisma.event.create({
+    // Create the event
+    const event = await prisma.event.create({
       data: {
         title,
         description,
         date: new Date(date),
         time,
         location,
-        image,
+        image, // Keep the primary image in the main event record
         category,
         capacity,
         createdBy: session.user.id,
       },
     });
 
+    // If there are additional images, create them
+    if (values.images && values.images.length > 0) {
+      await prisma.eventImage.createMany({
+        data: values.images.map(img => ({
+          eventId: event.id,
+          url: img.url,
+          caption: img.caption,
+          isPrimary: img.isPrimary,
+          position: img.position
+        }))
+      });
+    }
+
     revalidatePath("/events");
     return { success: "Event created successfully!" };
   } catch (error) {
+    console.error("Create event error:", error);
     return { error: "Failed to create event." };
   }
 }
 
 export async function updateEvent(
   id: string,
-  values: z.infer<typeof EventSchema>
+  values: z.infer<typeof EventSchema> & { images?: Array<{ id?: string, url: string, caption?: string, isPrimary: boolean, position: number }> }
 ) {
   const session = await auth();
 
@@ -82,6 +96,7 @@ export async function updateEvent(
   } = validatedFields.data;
 
   try {
+    // Update the main event record
     await prisma.event.update({
       where: { id },
       data: {
@@ -90,16 +105,38 @@ export async function updateEvent(
         date: new Date(date),
         time,
         location,
-        image,
+        image, // Keep the primary image in the main event record
         category,
         capacity,
       },
     });
 
+    // Handle the event images (if provided)
+    if (values.images) {
+      // First, delete existing images for this event
+      await prisma.eventImage.deleteMany({
+        where: { eventId: id }
+      });
+
+      // Then create the new/updated images
+      if (values.images.length > 0) {
+        await prisma.eventImage.createMany({
+          data: values.images.map(img => ({
+            eventId: id,
+            url: img.url,
+            caption: img.caption,
+            isPrimary: img.isPrimary,
+            position: img.position
+          }))
+        });
+      }
+    }
+
     revalidatePath(`/events/${id}`);
     revalidatePath("/events");
     return { success: "Event updated successfully!" };
   } catch (error) {
+    console.error("Update event error:", error);
     return { error: "Failed to update event." };
   }
 }
@@ -112,6 +149,8 @@ export async function deleteEvent(id: string) {
   }
 
   try {
+    // The associated EventImage records will be deleted automatically
+    // due to the onDelete: Cascade relation in the schema
     await prisma.event.delete({
       where: { id },
     });
@@ -196,6 +235,11 @@ export async function getEventById(id: string) {
         },
         _count: {
           select: { registrations: true },
+        },
+        images: {
+          orderBy: {
+            position: 'asc',
+          },
         },
       },
     });

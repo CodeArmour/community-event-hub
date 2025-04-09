@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { EventSchema } from "@/schemas/event";
@@ -20,6 +20,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
+import { MultipleImageUpload } from "@/components/image-upload";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const eventCategories = [
+  { value: "technology", label: "Technology", color: "bg-blue-500" },
+  { value: "business", label: "Business", color: "bg-green-500" },
+  { value: "social", label: "Social", color: "bg-purple-500" },
+  { value: "education", label: "Education", color: "bg-yellow-500" },
+  { value: "arts", label: "Arts & Culture", color: "bg-pink-500" },
+  { value: "sports", label: "Sports", color: "bg-orange-500" },
+  { value: "health", label: "Health & Wellness", color: "bg-teal-500" },
+  { value: "food", label: "Food & Drink", color: "bg-red-500" },
+];
+
+interface EventImage {
+  id?: string;
+  url: string;
+  caption?: string;
+  isPrimary: boolean;
+  position: number;
+}
 
 export default function EditEventPage({ params }: { params: { id: string } }) {
   const eventId = params.id;
@@ -27,13 +54,16 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
   const [event, setEvent] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [eventImages, setEventImages] = useState<EventImage[]>([]);
   const router = useRouter();
 
   const {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
+    setValue,
   } = useForm<z.infer<typeof EventSchema>>({
     resolver: zodResolver(EventSchema),
   });
@@ -58,11 +88,24 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
             ? new Date(data.date).toISOString().split("T")[0]
             : "";
 
+        // Setup event images from fetched data
+        const existingImages: EventImage[] = data.images || [];
+        
+        // If there are no images in the new format but there is a legacy image
+        if (existingImages.length === 0 && data.image) {
+          existingImages.push({
+            url: data.image,
+            isPrimary: true,
+            position: 0,
+          });
+        }
+        
+        setEventImages(existingImages);
+
         reset({
           ...data,
           date: formattedDate,
           capacity: Number(data.capacity),
-          // Ensure image is a string, not null
           image: data.image || "",
         });
       } catch (err) {
@@ -76,18 +119,48 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
     fetchEvent();
   }, [eventId, reset]);
 
+  const handleImagesUpdated = (images: EventImage[]) => {
+    setEventImages(images);
+    
+    // Set the primary image as the main event image
+    const primaryImage = images.find(img => img.isPrimary);
+    if (primaryImage) {
+      setValue("image", primaryImage.url);
+    } else if (images.length > 0) {
+      setValue("image", images[0].url);
+    } else {
+      setValue("image", "");
+    }
+  };
+
   const onSubmit = async (data: z.infer<typeof EventSchema>) => {
     try {
-      const res = await updateEvent(eventId, data);
+      // Prepare event data with images
+      const eventData = {
+        ...data,
+        // Include images array for the API
+        images: eventImages,
+      };
+      
+      const res = await updateEvent(eventId, eventData);
       if (res.success) {
-        toast.success({ description: "Event updated successfully" });
+        toast.success({ 
+          title: "Success",
+          description: "Event updated successfully" 
+        });
         router.push("/admin/events");
       } else {
-        toast.error(res.message || "Failed to update event");
+        toast.error({ 
+          title: "Error",
+          description: res.message || "Failed to update event" 
+        });
       }
     } catch (error) {
       console.error("Error updating event:", error);
-      toast.error({ description: "Something went wrong. Please try again." });
+      toast.error({ 
+        title: "Error",
+        description: "Something went wrong. Please try again." 
+      });
     }
   };
 
@@ -161,7 +234,35 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
             <div className="grid gap-6 md:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="category">Category</Label>
-                <Input id="category" {...register("category")} />
+                <Controller
+                  name="category"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {eventCategories.map((category) => (
+                          <SelectItem
+                            key={category.value}
+                            value={category.value}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`h-3 w-3 rounded-full ${category.color}`}
+                              ></span>
+                              {category.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 <p className="text-sm text-red-500">
                   {errors.category?.message}
                 </p>
@@ -179,11 +280,17 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="image">Event Image URL</Label>
-              <Input id="image" {...register("image")} />
+              <Label>Event Images</Label>
+              <MultipleImageUpload 
+                onImagesUpdated={handleImagesUpdated} 
+                defaultImages={eventImages}
+                maxImages={10}
+              />
               <p className="text-xs text-muted-foreground">
-                Enter a URL for the event cover image
+                Upload up to 10 images. Set one as primary to be the main event image.
               </p>
+              {/* Hidden input for form validation */}
+              <input type="hidden" {...register("image")} />
             </div>
             <Button type="submit">Update Event</Button>
           </form>

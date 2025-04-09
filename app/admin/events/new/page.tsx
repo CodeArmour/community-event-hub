@@ -13,7 +13,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -28,6 +27,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast"
+import { MultipleImageUpload } from "@/components/image-upload";
+import { useState } from "react";
 
 const eventCategories = [
   { value: "technology", label: "Technology", color: "bg-blue-500" },
@@ -40,20 +41,52 @@ const eventCategories = [
   { value: "food", label: "Food & Drink", color: "bg-red-500" },
 ];
 
+interface EventImage {
+  id?: string;
+  url: string;
+  caption?: string;
+  isPrimary: boolean;
+  position: number;
+}
+
 export default function NewEventPage() {
   const router = useRouter();
+  const [eventImages, setEventImages] = useState<EventImage[]>([]);
+  
   const {
     register,
     handleSubmit,
     control,
     formState: { errors },
+    setValue,
   } = useForm<z.infer<typeof EventSchema>>({
     resolver: zodResolver(EventSchema),
   });
 
+  const handleImagesUpdated = (images: EventImage[]) => {
+    setEventImages(images);
+    
+    // Set the primary image as the main event image
+    const primaryImage = images.find(img => img.isPrimary);
+    if (primaryImage) {
+      setValue("image", primaryImage.url);
+    } else if (images.length > 0) {
+      setValue("image", images[0].url);
+    } else {
+      setValue("image", "");
+    }
+  };
+
   const onSubmit = async (data: z.infer<typeof EventSchema>) => {
     try {
-      const res = await createEvent(data);
+      // Prepare event data with images
+      const eventData = {
+        ...data,
+        // Include images array for the API
+        images: eventImages,
+      };
+      
+      const res = await createEvent(eventData);
       if (res.success) {
         toast.success({
           title: "Success",
@@ -176,11 +209,16 @@ export default function NewEventPage() {
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="image">Image URL</Label>
-              <Input id="image" {...register("image")} />
+              <Label>Event Images</Label>
+              <MultipleImageUpload 
+                onImagesUpdated={handleImagesUpdated} 
+                maxImages={10}
+              />
               <p className="text-xs text-muted-foreground">
-                Enter a URL for the event image
+                Upload up to 10 images. Set one as primary to be the main event image.
               </p>
+              {/* Hidden input for form validation */}
+              <input type="hidden" {...register("image")} />
             </div>
             <Button type="submit">Create Event</Button>
           </form>

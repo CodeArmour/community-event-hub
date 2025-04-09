@@ -45,6 +45,7 @@ import {
   updateTwoFactorAuth,
 } from "@/actions/users";
 import { getRecentActivities } from "@/actions/activities";
+import { signOut } from "next-auth/react";
 
 export default function AdminProfilePage() {
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -60,6 +61,21 @@ export default function AdminProfilePage() {
   const [emailNotifications, setEmailNotifications] = useState<boolean>(true);
   const [smsNotifications, setSmsNotifications] = useState<boolean>(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState<boolean>(false);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut({
+        redirect: true,
+        callbackUrl: "/",
+      });
+    } catch (error) {
+      console.error("Logout failed:", error);
+      toast.error({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+      });
+    }
+  };
 
   // Handle avatar loading errors
   const handleAvatarError = (
@@ -388,7 +404,11 @@ export default function AdminProfilePage() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-center gap-4">
-            <Button variant="outline" className="gap-2 rounded-full">
+            <Button 
+              variant="outline" 
+              className="gap-2 rounded-full"
+              onClick={handleSignOut}
+            >
               <LogOut className="h-4 w-4" />
               Sign Out
             </Button>

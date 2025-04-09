@@ -67,7 +67,7 @@ model Event {
   date         DateTime
   time         String
   location     String
-  image        String?
+  image        String?        // Keep as thumbnail/primary image
   category     String
   capacity     Int
   createdBy    String
@@ -76,9 +76,25 @@ model Event {
   creator      User           @relation("CreatedEvents", fields: [createdBy], references: [id])
   registrations Registration[]
   activities   Activity[]     // Add relation to activities
+  images       EventImage[]   // Add relation to multiple images
 
   @@index([date])
   @@index([category])
+}
+
+// New model for event images
+model EventImage {
+  id        String   @id @default(uuid())
+  eventId   String
+  url       String
+  caption   String?
+  isPrimary Boolean  @default(false)
+  position  Int      @default(0)  // For ordering images
+  createdAt DateTime @default(now())
+  
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
 }
 
 model Registration {
