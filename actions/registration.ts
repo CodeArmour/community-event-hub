@@ -54,6 +54,14 @@ export async function createRegistration(eventId: string) {
           },
           data: {
             status: "REGISTERED",
+            // Generate new QR code data
+            qrCodeData: JSON.stringify({
+              registrationId: existingRegistration.id,
+              userId,
+              eventId,
+              eventTitle: event.title,
+              timestamp: new Date().toISOString(),
+            }),
           },
           include: {
             event: {
@@ -75,12 +83,26 @@ export async function createRegistration(eventId: string) {
       return { error: "You are already registered for this event" };
     }
 
+    // Generate unique registration ID
+    const registrationId = crypto.randomUUID();
+    
+    // Generate QR code data
+    const qrCodeData = JSON.stringify({
+      registrationId,
+      userId,
+      eventId,
+      eventTitle: event.title,
+      timestamp: new Date().toISOString(),
+    });
+
     // Create new registration
     const registration = await prisma.registration.create({
       data: {
+        id: registrationId,
         userId,
         eventId,
         status: "REGISTERED",
+        qrCodeData, // Store QR code data
       },
       include: {
         event: {
@@ -103,6 +125,42 @@ export async function createRegistration(eventId: string) {
   }
 }
 
+// 3. Update getRegistrationById to include QR code data
+export async function getRegistrationById(registrationId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    const registration = await prisma.registration.findUnique({
+      where: { id: registrationId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        event: true,
+      },
+    });
+
+    // Only allow the registration owner or admins to view it
+    if (
+      !registration ||
+      (registration.userId !== session.user.id && session.user.role !== "ADMIN")
+    ) {
+      throw new Error("Registration not found or access denied");
+    }
+
+    return registration;
+  } catch (error) {
+    throw new Error("Failed to fetch registration");
+  }
+}
 export async function cancelRegistration(eventId: string) {
   const session = await auth();
 
@@ -276,42 +334,6 @@ export async function getEventRegistrations(
     };
   } catch (error) {
     throw new Error("Failed to fetch event registrations");
-  }
-}
-
-export async function getRegistrationById(registrationId: string) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
-
-  try {
-    const registration = await prisma.registration.findUnique({
-      where: { id: registrationId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        event: true,
-      },
-    });
-
-    // Only allow the registration owner or admins to view it
-    if (
-      !registration ||
-      (registration.userId !== session.user.id && session.user.role !== "ADMIN")
-    ) {
-      throw new Error("Registration not found or access denied");
-    }
-
-    return registration;
-  } catch (error) {
-    throw new Error("Failed to fetch registration");
   }
 }
 

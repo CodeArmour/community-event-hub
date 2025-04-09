@@ -54,6 +54,7 @@
     "next-auth": "^5.0.0-beta.25",
     "next-themes": "latest",
     "qrcode": "^1.5.4",
+    "qrcode.react": "^4.2.0",
     "react": "^19",
     "react-day-picker": "8.10.1",
     "react-dom": "^19",
