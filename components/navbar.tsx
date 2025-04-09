@@ -61,7 +61,6 @@ export default function Navbar({ user }: { user: User }) {
   const isSignedIn = !!user;
   const isAdmin = user?.role === "ADMIN";
   const profilePath = isAdmin ? "/admin/profile" : "/profile";
-  const settingsPath = isAdmin ? "/admin/settings" : "/settings";
 
   // Handle sign out using Auth.js v5
   const handleSignOut = async () => {
@@ -179,15 +178,18 @@ export default function Navbar({ user }: { user: User }) {
                     Profile
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link
-                    href={settingsPath}
-                    className="flex w-full cursor-pointer items-center"
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
+                {/* Only show Settings for admin users */}
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/admin/settings"
+                      className="flex w-full cursor-pointer items-center"
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 {isAdmin && (
                   <>
                     <DropdownMenuSeparator />
@@ -298,13 +300,16 @@ export default function Navbar({ user }: { user: User }) {
                       <User className="mr-2 h-4 w-4" />
                       Profile
                     </Link>
-                    <Link
-                      href={settingsPath}
-                      className="flex items-center rounded-lg px-3 py-2 transition-colors hover:bg-muted"
-                    >
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </Link>
+                    {/* Only show Settings for admin users in mobile menu */}
+                    {isAdmin && (
+                      <Link
+                        href="/admin/settings"
+                        className="flex items-center rounded-lg px-3 py-2 transition-colors hover:bg-muted"
+                      >
+                        <Settings className="mr-2 h-4 w-4" />
+                        Settings
+                      </Link>
+                    )}
                     <Button
                       variant="destructive"
                       size="sm"
