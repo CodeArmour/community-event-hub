@@ -22,6 +22,7 @@ model User {
   registrations Registration[]
   accounts      Account[]
   sessions      Session[]
+  activities    Activity[]     // Add relation to activities
 }
 
 model Account {
@@ -74,6 +75,7 @@ model Event {
   updatedAt    DateTime       @updatedAt
   creator      User           @relation("CreatedEvents", fields: [createdBy], references: [id])
   registrations Registration[]
+  activities   Activity[]     // Add relation to activities
 
   @@index([date])
   @@index([category])
@@ -92,6 +94,25 @@ model Registration {
   @@unique([userId, eventId])
   @@index([userId])
   @@index([eventId])
+}
+
+// New Activity model to track admin actions
+model Activity {
+  id         String   @id @default(uuid())
+  userId     String
+  action     String
+  targetType String?  // Can be "EVENT", "USER", "SYSTEM", etc.
+  targetId   String?  // ID of the related entity (eventId, userId, etc.)
+  targetName String   // Name/title of the target (event title, user name, etc.)
+  link       String?  // Link to the related resource
+  createdAt  DateTime @default(now())
+  
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event      Event?   @relation(fields: [targetId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([targetId])
+  @@index([createdAt])
 }
 
 enum Role {
