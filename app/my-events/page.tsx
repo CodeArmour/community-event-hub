@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getUserRegistrations } from "@/actions/registration"
+import { getRecommendedEvents } from "@/actions/recommendation"
 import { Loader2 } from "lucide-react"
 
 export default function MyEventsPage() {
@@ -17,6 +18,7 @@ export default function MyEventsPage() {
   const [pastEvents, setPastEvents] = useState([])
   const [recommendedEvents, setRecommendedEvents] = useState([])
   const [loading, setLoading] = useState(true)
+  const [recommendationsLoading, setRecommendationsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("upcoming")
   const [viewType, setViewType] = useState("list")
   const [page, setPage] = useState(1)
@@ -35,7 +37,6 @@ export default function MyEventsPage() {
         const attendedEventsData = attendedData.registrations.map(reg => reg.event)
         setPastEvents(attendedEventsData)
 
-        setRecommendedEvents([])
         setLoading(false)
       } catch (error) {
         console.error("Error fetching registrations:", error)
@@ -43,7 +44,20 @@ export default function MyEventsPage() {
       }
     }
 
+    const fetchRecommendations = async () => {
+      try {
+        setRecommendationsLoading(true)
+        const { events } = await getRecommendedEvents(4)
+        setRecommendedEvents(events)
+        setRecommendationsLoading(false)
+      } catch (error) {
+        console.error("Error fetching recommendations:", error)
+        setRecommendationsLoading(false)
+      }
+    }
+
     fetchRegistrations()
+    fetchRecommendations()
   }, [])
 
   const handleTabChange = (value: SetStateAction<string>) => {
@@ -171,10 +185,10 @@ export default function MyEventsPage() {
               AI Powered
             </span>
           </CardTitle>
-          <CardDescription>Events you might be interested in based on your preferences</CardDescription>
+          <CardDescription>Events you might be interested in based on your preferences and past activities</CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {recommendationsLoading ? (
             <div className="flex h-40 items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>

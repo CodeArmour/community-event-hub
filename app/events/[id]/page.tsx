@@ -215,7 +215,7 @@ function EventPageContent({ params }: { params: { id: string } }) {
   return (
     <div className="container mx-auto px-4 py-8">
       <Link
-        href="/events"
+        href="/my-events"
         className="mb-6 inline-flex items-center text-sm text-muted-foreground hover:text-primary"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
