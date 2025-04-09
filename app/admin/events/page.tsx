@@ -5,17 +5,42 @@ import { Edit, Plus, Trash2 } from "lucide-react";
 import { getEvents, deleteEvent } from "@/actions/event";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "@/components/ui/toast";
 
 export default function EventsManagementPage() {
   const [events, setEvents] = useState<any[]>([]);
 
   useEffect(() => {
-    getEvents().then((data) => setEvents(data.events));
+    getEvents()
+      .then((data) => {
+        setEvents(data.events);
+        toast.success({
+          title: "Events loaded",
+          description: `Successfully loaded ${data.events.length} events`,
+        });
+      })
+      .catch((error) => {
+        toast.error({
+          title: "Error loading events",
+          description: error.message || "Failed to load events",
+        });
+      });
   }, []);
 
   const handleDelete = async (id: string) => {
-    await deleteEvent(id);
-    setEvents((prev) => prev.filter((e) => e.id !== id));
+    try {
+      await deleteEvent(id);
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+      toast.success({
+        title: "Event deleted",
+        description: "The event has been successfully deleted",
+      });
+    } catch (error: any) {
+      toast.error({
+        title: "Error deleting event",
+        description: error.message || "Failed to delete event",
+      });
+    }
   };
 
   return (

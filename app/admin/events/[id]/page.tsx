@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/toast";
 
 export default function EditEventPage({ params }: { params: { id: string } }) {
   const eventId = params.id;
@@ -76,8 +77,18 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
   }, [eventId, reset]);
 
   const onSubmit = async (data: z.infer<typeof EventSchema>) => {
-    const res = await updateEvent(eventId, data);
-    if (res.success) router.push("/admin/events");
+    try {
+      const res = await updateEvent(eventId, data);
+      if (res.success) {
+        toast.success({ description: "Event updated successfully" });
+        router.push("/admin/events");
+      } else {
+        toast.error(res.message || "Failed to update event");
+      }
+    } catch (error) {
+      console.error("Error updating event:", error);
+      toast.error({ description: "Something went wrong. Please try again." });
+    }
   };
 
   if (isLoading)

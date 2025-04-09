@@ -12,7 +12,7 @@ import {RegisterSchema} from "@/schemas/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/components/ui/toast"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { register } from "@/actions/auth"
@@ -40,23 +40,21 @@ export default function SignUpPage() {
       const result = await register(values);
       
       if (result?.error) {
-        toast({
+        toast.error({
           title: "Registration failed",
           description: result.error,
-          variant: "destructive",
         });
       } else {
         // Success - user is automatically signed in via the register action
-        toast({
+        toast.success({
           title: "Account created!",
           description: "You have successfully registered and signed in.",
         });
       }
     } catch (error) {
-      toast({
+      toast.error({
         title: "Something went wrong",
         description: "There was a problem with your registration. Please try again.",
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);

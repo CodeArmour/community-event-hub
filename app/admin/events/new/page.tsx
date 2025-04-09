@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "@/components/ui/toast"
 
 const eventCategories = [
   { value: "technology", label: "Technology", color: "bg-blue-500" },
@@ -51,8 +52,26 @@ export default function NewEventPage() {
   });
 
   const onSubmit = async (data: z.infer<typeof EventSchema>) => {
-    const res = await createEvent(data);
-    if (res.success) router.push("/admin/events");
+    try {
+      const res = await createEvent(data);
+      if (res.success) {
+        toast.success({
+          title: "Success",
+          description: "Event created successfully",
+        });
+        router.push("/admin/events");
+      } else {
+        toast.error({
+          title: "Error",
+          description: res.error || "Failed to create event",
+        });
+      }
+    } catch (error) {
+      toast.error({
+        title: "Error",
+        description: "Something went wrong while creating the event",
+      });
+    }
   };
 
   return (

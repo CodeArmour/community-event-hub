@@ -36,6 +36,8 @@
 
     --card-gradient-from: rgba(255, 255, 255, 0.8);
     --card-gradient-to: rgba(255, 255, 255, 0.4);
+
+    --toast-shadow: 0 8px 16px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.03);
   }
 
   .dark {
@@ -69,6 +71,8 @@
 
     --card-gradient-from: rgba(34, 37, 45, 0.8);
     --card-gradient-to: rgba(34, 37, 45, 0.4);
+
+    --toast-shadow: 0 8px 16px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -145,5 +149,76 @@
   .form-card {
     @apply rounded-2xl border-none bg-card p-6 shadow-md;
   }
-}
 
+  /* Enhanced Toast styles */
+  .sonner-toast {
+    @apply rounded-xl border shadow-lg backdrop-blur-sm !important;
+    animation: toast-enter 0.35s ease-out forwards !important;
+    transform-origin: top right;
+  }
+
+  .sonner-toast[data-type="success"] {
+    @apply border-green-200 bg-green-50/90 dark:border-green-900/30 dark:bg-green-900/20 !important;
+  }
+
+  .sonner-toast[data-type="error"] {
+    @apply border-red-200 bg-red-50/90 dark:border-red-900/30 dark:bg-red-900/20 !important;
+  }
+
+  .sonner-toast[data-type="info"] {
+    @apply border-blue-200 bg-blue-50/90 dark:border-blue-900/30 dark:bg-blue-900/20 !important;
+  }
+
+  .sonner-toast[data-type="warning"] {
+    @apply border-amber-200 bg-amber-50/90 dark:border-amber-900/30 dark:bg-amber-900/20 !important;
+  }
+
+  .toast-event {
+    @apply border-primary/20 bg-primary/5 dark:border-primary/30 dark:bg-primary/10 !important;
+  }
+
+  .sonner-toast-title {
+    @apply text-base font-semibold !important;
+    margin-bottom: 4px !important;
+  }
+
+  .sonner-toast-description {
+    @apply text-sm text-muted-foreground !important;
+    line-height: 1.5 !important;
+  }
+
+  .sonner-toast-action {
+    @apply mt-2 rounded-lg bg-background px-3 py-1.5 text-xs font-medium shadow-sm transition-colors hover:bg-muted !important;
+  }
+
+  .sonner-loader {
+    @apply bg-primary !important;
+  }
+
+  .sonner-toast-close-button {
+    @apply rounded-full p-1 opacity-70 transition-opacity hover:bg-muted hover:opacity-100 !important;
+  }
+
+  /* Toast spinner animation */
+  .toast-spinner {
+    @apply h-8 w-8 rounded-full border-2 border-primary/30 border-t-primary;
+    animation: spin 0.75s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes toast-enter {
+    0% {
+      opacity: 0;
+      transform: translateX(25%) translateY(-25%) scale(0.85);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0) translateY(0) scale(1);
+    }
+  }
+}

@@ -5,6 +5,7 @@ import Navbar from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import { getUserSession } from "@/lib/auth";
+import { ToastProvider } from "@/components/toast-provider"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -40,6 +41,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </div>
               </footer>
             </div>
+            <ToastProvider />
           </ThemeProvider>
         </AuthProvider>
       </body>

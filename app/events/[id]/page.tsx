@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/toast";
 import EventHeader from "@/components/event-header";
 import EventImageCarousel from "@/components/event-image-carousel";
 import EventDescription from "@/components/event-description";
@@ -27,7 +27,6 @@ export default function EventPage({ params }: { params: { id: string } }) {
 }
 
 function EventPageContent({ params }: { params: { id: string } }) {
-  const { toast } = useToast();
   // Direct access to session without intermediate state
   const { data: session, status } = useSession();
 
@@ -45,10 +44,9 @@ function EventPageContent({ params }: { params: { id: string } }) {
         setEvent(eventData);
       } catch (error) {
         console.error("Error loading event:", error);
-        toast({
+        toast.error({
           title: "Error",
           description: "Failed to load event details",
-          variant: "destructive",
         });
       } finally {
         setLoading(false);
@@ -100,10 +98,9 @@ function EventPageContent({ params }: { params: { id: string } }) {
 
   const handleRegister = async () => {
     if (status !== "authenticated" || !session) {
-      toast({
+      toast.warning({
         title: "Authentication Required",
         description: "Please sign in to register for events",
-        variant: "destructive",
       });
       return;
     }
@@ -121,23 +118,20 @@ function EventPageContent({ params }: { params: { id: string } }) {
         const updatedEvent = await getEventById(params.id);
         setEvent(updatedEvent);
 
-        toast({
+        toast.success({
           title: "Success",
           description: result.success,
-          variant: "default",
         });
       } else if (result.error) {
-        toast({
+        toast.error({
           title: "Registration Failed",
           description: result.error,
-          variant: "destructive",
         });
       }
     } catch (error) {
-      toast({
+      toast.error({
         title: "Error",
         description: "Failed to register for the event",
-        variant: "destructive",
       });
     }
   };
@@ -156,23 +150,20 @@ function EventPageContent({ params }: { params: { id: string } }) {
         const updatedEvent = await getEventById(params.id);
         setEvent(updatedEvent);
 
-        toast({
+        toast.success({
           title: "Success",
           description: result.success,
-          variant: "default",
         });
       } else if (result.error) {
-        toast({
+        toast.warning({
           title: "Cancellation Failed",
           description: result.error,
-          variant: "destructive",
         });
       }
     } catch (error) {
-      toast({
+      toast.error({
         title: "Error",
         description: "Failed to cancel registration",
-        variant: "destructive",
       });
     }
   };

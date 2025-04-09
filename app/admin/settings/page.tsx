@@ -63,7 +63,7 @@ import {
   updateUserRole,
   deleteUser,
 } from "@/actions/settings";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 export default function AdminSettingsPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -86,7 +86,10 @@ export default function AdminSettingsPage() {
         const userData = await getUsers();
         setUsers(userData);
       } catch (error) {
-        toast.error("Failed to load users");
+        toast.error({
+          title: "Error",
+          description: "Failed to load users",
+        });
         console.error(error);
       } finally {
         setLoading(false);
@@ -116,7 +119,10 @@ export default function AdminSettingsPage() {
       const registrations = await getUserRegistrations(userId);
       setUserEvents(registrations);
     } catch (error) {
-      toast.error("Failed to load user events");
+      toast.error({
+        title: "Error",
+        description: "Failed to load user events",
+      });
       console.error(error);
     } finally {
       setEventsLoading(false);
@@ -137,10 +143,16 @@ export default function AdminSettingsPage() {
         )
       );
       
-      toast.success("User role updated successfully");
+      toast.success({
+        title: "Success",
+        description: "User role updated successfully",
+      });
       setShowRoleDialog(false);
     } catch (error) {
-      toast.error("Failed to update user role");
+      toast.error({
+        title: "Error",
+        description: "Failed to update user role",
+      });
       console.error(error);
     }
   };
@@ -150,10 +162,16 @@ export default function AdminSettingsPage() {
     try {
       await deleteUser(userId);
       setUsers(users.filter((user) => user.id !== userId));
-      toast.success("User deleted successfully");
+      toast.success({
+        title: "Success",
+        description: "User deleted successfully",
+      });
       setShowDeleteDialog(false);
     } catch (error) {
-      toast.error("Failed to delete user");
+      toast.error({
+        title: "Error",
+        description: "Failed to delete user",
+      });
       console.error(error);
     }
   };

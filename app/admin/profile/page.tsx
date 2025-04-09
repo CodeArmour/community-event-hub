@@ -28,7 +28,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 
 // Import our types
 import { Admin, Activity } from "@/lib/types";
@@ -108,10 +108,9 @@ export default function AdminProfilePage() {
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching data:", error);
-        toast({
+        toast.error({
           title: "Error",
           description: "Failed to load profile data. Please try again.",
-          variant: "destructive",
         });
         setIsLoading(false);
       }
@@ -171,7 +170,7 @@ export default function AdminProfilePage() {
       // Refresh the activities list to show the new activity
       await refreshActivities();
 
-      toast({
+      toast.success({
         title: "Success",
         description: "Your profile has been updated successfully.",
       });
@@ -203,16 +202,15 @@ export default function AdminProfilePage() {
         }
 
         setIsEditing(false);
-        toast({
+        toast.success({
           title: "Profile Updated",
           description:
             "Your profile was updated, but we couldn't record this activity in your history.",
         });
       } else {
-        toast({
+        toast.error({
           title: "Error",
           description: errorMessage,
-          variant: "destructive",
         });
       }
     }
@@ -255,7 +253,7 @@ export default function AdminProfilePage() {
       // Refresh the activities list to show the new activity
       await refreshActivities();
 
-      toast({
+      toast.success({
         title: "Success",
         description: "Your password has been updated successfully.",
       });
@@ -264,10 +262,9 @@ export default function AdminProfilePage() {
         error instanceof Error
           ? error.message
           : "Failed to update password. Please try again.";
-      toast({
+      toast.error({
         title: "Error",
         description: errorMessage,
-        variant: "destructive",
       });
     }
   };
@@ -289,7 +286,7 @@ export default function AdminProfilePage() {
       // Refresh the activities list to show the new activity
       await refreshActivities();
 
-      toast({
+      toast.success({
         title: "Success",
         description: `Two-factor authentication has been ${
           enabled ? "enabled" : "disabled"
@@ -301,10 +298,9 @@ export default function AdminProfilePage() {
           ? error.message
           : "Failed to update two-factor authentication settings.";
 
-      toast({
+      toast.error({
         title: "Error",
         description: errorMessage,
-        variant: "destructive",
       });
     }
   };

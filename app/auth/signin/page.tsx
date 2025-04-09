@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/components/ui/toast"
 import { useForm } from "react-hook-form"
 import { LoginSchema } from "@/schemas/auth"
 import { login } from "@/actions/auth"
@@ -31,23 +31,18 @@ export default function SignInPage() {
       const result = await login(values);
       
       if (result?.error) {
-        toast({
+        toast.error({
           title: "Error",
           description: result.error,
-          variant: "destructive",
         });
       } else {
-        toast({
+        toast.success({
           title: "Success",
           description: "Logged in successfully!",
         });
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
+      
     } finally {
       setIsLoading(false);
     }
