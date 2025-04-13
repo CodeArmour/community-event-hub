@@ -10,11 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getEvents } from "@/actions/event";
 import type { Event } from "@/lib/types";
-import { useSession } from "next-auth/react";
-import { getCurrentUserForProfile } from "@/actions/profile";
+import { SessionProvider, useSession } from "next-auth/react";
 
-
-export default function HomePage() {
+// Create a separate component for the main content to use useSession hook
+function HomePageContent() {
   const [events, setEvents] = useState<Event[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [tab, setTab] = useState("upcoming");
@@ -22,7 +21,7 @@ export default function HomePage() {
   const itemsPerPage = 8;
 
   // Get session with status to trigger re-renders
-  const { data: sessionData, status } = useSession();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -48,7 +47,7 @@ export default function HomePage() {
     }
     if (tab === "nearby") {
       list = list.filter((e) => new Date(e.date) > now);
-      list = list.filter((e) => e.location === sessionData?.user?.location);
+      list = list.filter((e) => e.location === session?.user?.location);
     }
 
     // Apply search
@@ -58,7 +57,7 @@ export default function HomePage() {
     }
 
     return list;
-  }, [events, tab, searchTerm]);
+  }, [events, tab, searchTerm, session?.user?.location]);
 
   const paginated = useMemo(() => {
     const start = (page - 1) * itemsPerPage;
@@ -67,8 +66,8 @@ export default function HomePage() {
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
-  // Session status for header button
-  const isSignedIn = status === "authenticated";
+  // Using status directly for clarity
+  const isAuthenticated = status === "authenticated";
 
   return (
     <div>
@@ -97,13 +96,13 @@ export default function HomePage() {
                 className="h-12 border-white/20 bg-white/10 pl-10 text-white placeholder:text-white/70 focus:border-white/30 focus:bg-white/20"
               />
             </div>
-            <Link href={isSignedIn ? "/events/create" : "/auth/signin"} className="z-10">
+            <Link href={isAuthenticated ? "/my-events" : "/auth/signin"} className="z-10">
               <Button
                 size="lg"
                 className="button-gradient w-full sm:w-auto"
                 variant="default"
               >
-                {isSignedIn ? "Create Event" : "Get Started"}
+                {isAuthenticated ? "See My Events" : "Get Started"}
               </Button>
             </Link>
           </div>
@@ -178,5 +177,14 @@ export default function HomePage() {
         </Tabs>
       </div>
     </div>
+  );
+}
+
+// Main export component with SessionProvider wrapper
+export default function HomePage() {
+  return (
+    <SessionProvider>
+      <HomePageContent />
+    </SessionProvider>
   );
 }

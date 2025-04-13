@@ -53,7 +53,7 @@ interface User {
   role?: "ADMIN" | "USER";
 }
 
-export default function Navbar({ user }: { user: User }) {
+export default function Navbar({ user }: { user?: User }) {
   const session = useSession();
   const pathname = usePathname();
   const { setTheme, theme } = useTheme();

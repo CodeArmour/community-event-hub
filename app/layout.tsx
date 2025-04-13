@@ -6,6 +6,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import { getUserSession } from "@/lib/auth";
 import { ToastProvider } from "@/components/toast-provider"
+import { SessionProvider } from "next-auth/react";
+import { AiChat } from "@/components/ai-chat/ai-chat"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,7 +28,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <div className="flex min-h-screen flex-col">
               <Navbar user={user}/>
-              <main className="flex-1">{children}</main>
+              <main className="flex-1">
+                <SessionProvider>
+                {children}
+                </SessionProvider>
+                </main>
               <footer className="border-t py-6">
                 <div className="container mx-auto px-4 text-center">
                   <div className="mb-4 flex items-center justify-center space-x-6">
@@ -42,6 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </footer>
             </div>
             <ToastProvider />
+            <AiChat />
           </ThemeProvider>
         </AuthProvider>
       </body>

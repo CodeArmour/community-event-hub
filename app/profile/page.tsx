@@ -16,7 +16,7 @@ import {
   updateUserProfile,
   updateUserPassword,
 } from "@/actions/profile";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 import { format } from "date-fns";
 
 // Available event categories
@@ -93,10 +93,9 @@ export default function ProfilePage() {
         setNotifications(activeNotifications);
       } catch (error) {
         console.error("Error loading user data:", error);
-        toast({
+        toast.error({
           title: "Error",
           description: "Failed to load profile data",
-          variant: "destructive",
         });
       } finally {
         setLoading(false);
@@ -163,18 +162,17 @@ export default function ProfilePage() {
       const result = await updateUserProfile(formData);
 
       if (result.success) {
-        toast({
+        toast.success({
           title: "Profile Updated",
           description: "Your profile has been updated successfully",
         });
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast({
+      toast.error({
         title: "Error",
         description:
           error instanceof Error ? error.message : "Failed to update profile",
-        variant: "destructive",
       });
     }
   };
@@ -190,7 +188,7 @@ export default function ProfilePage() {
       const result = await updateUserPassword(formData);
 
       if (result.success) {
-        toast({
+        toast.success({
           title: "Password Updated",
           description: "Your password has been updated successfully",
         });
@@ -198,11 +196,10 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error("Error updating password:", error);
-      toast({
+      toast.error({
         title: "Error",
         description:
           error instanceof Error ? error.message : "Failed to update password",
-        variant: "destructive",
       });
     }
   };

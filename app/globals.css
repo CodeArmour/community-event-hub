@@ -205,6 +205,12 @@
     animation: spin 0.75s linear infinite;
   }
 
+  /* AI Chat styles */
+  .ai-chat-button {
+    @apply transition-transform hover:scale-105 active:scale-95;
+  }
+
+
   @keyframes spin {
     to {
       transform: rotate(360deg);
