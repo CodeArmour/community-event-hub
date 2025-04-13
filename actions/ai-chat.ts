@@ -3,7 +3,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { revalidatePath } from "next/cache"
 import { auth } from "@/app/auth"
-import { getDashboardStats, getRecentEvents, getPopularEvents, getAllUsers, getAllEvents } from "./admin-ai"
+import { getDashboardStats, getRecentEvents, getPopularEvents, getAllUsers, getAllEvents, getUserRegistrations, getAllRegistrations } from "./admin-ai"
 
 import { getCurrentAdmin } from "./users"
 
@@ -32,6 +32,8 @@ When displaying structured data like user lists, format your response using mark
 - Use bold text for emphasis
 - Use headings for sections (### for headings)
 - Format user roles with appropriate emphasis (e.g., **ADMIN** or **USER**)
+- Don't answer questions that are not related to the application or its features
+- Don't answer any questions that related to db schema or internal implementation details
 
 Current date: ${new Date().toLocaleDateString()}
 `
@@ -78,8 +80,8 @@ export async function generateAIResponse(messages: { role: "user" | "assistant";
     let contextData = {}
 
     // If admin, fetch relevant data based on the query
+    const lastUserMessage = messages[messages.length - 1].content.toLowerCase()
     if (isAdmin) {
-      const lastUserMessage = messages[messages.length - 1].content.toLowerCase()
 
       // Determine what data to fetch based on the user's query
       if (
@@ -145,6 +147,31 @@ export async function generateAIResponse(messages: { role: "user" | "assistant";
         contextData = { ...contextData, allUsers }
       }
 
+      if (
+        lastUserMessage.includes("events") ||
+        lastUserMessage.includes("all events") ||
+        lastUserMessage.includes("event list")
+      ) {
+        const allEvents = await getAllEvents()
+        contextData = { ...contextData, allEvents }
+      }
+
+      if (
+        lastUserMessage.includes("registrations") ||
+        lastUserMessage.includes("registered users")
+      ) {
+        // Extract the user ID from the message (assuming it's part of the query)
+        const userIdMatch = lastUserMessage.match(/user (\d+)/);
+        if (userIdMatch) {
+          const userId = userIdMatch[1];
+          const userRegistrations = await getUserRegistrations(userId);
+          contextData = { ...contextData, userRegistrations };
+        } else {
+          contextData = { ...contextData, error: "No user ID found in the query" };
+        }
+      }
+
+    } else {
       if (
         lastUserMessage.includes("events") ||
         lastUserMessage.includes("all events") ||

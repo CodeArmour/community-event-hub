@@ -174,3 +174,59 @@ export async function logAdminActivity({
     },
   });
 }
+
+// Get registrations for a specific user
+export async function getUserRegistrations(userId: string) {
+  await assertAdmin();  // Ensure the user is an admin
+
+  // Fetch registrations for the user
+  const registrations = await prisma.registration.findMany({
+    where: {
+      userId: userId,
+    },
+    include: {
+      event: {
+        select: {
+          id: true,
+          title: true,
+          date: true,
+          location: true,
+        },
+      },
+    },
+  });
+
+  return registrations;
+}
+
+
+// Get all registrations with user and event details (admin-only)
+// Get all registrations with user and event details
+export async function getAllRegistrations() {
+  await assertAdmin();  // Ensure the user is an admin
+
+  // Fetch all registrations
+  const registrations = await prisma.registration.findMany({
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      event: {
+        select: {
+          id: true,
+          title: true,
+          date: true,
+          location: true,
+        },
+      },
+    },
+  });
+
+  return registrations;
+}
+
+
