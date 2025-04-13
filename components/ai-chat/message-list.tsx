@@ -36,6 +36,7 @@ export function MessageList({ messages }: MessageListProps) {
               <div className="chat-message-content">
                 <ReactMarkdown
                   components={{
+                    span: ({ node, ...props }) => <span className="text-xs sm:text-sm" {...props} />,
                     ul: ({ node, ...props }) => <ul className="list-disc pl-5 my-2" {...props} />,
                     ol: ({ node, ...props }) => <ol className="list-decimal pl-5 my-2" {...props} />,
                     li: ({ node, ...props }) => <li className="my-1" {...props} />,
