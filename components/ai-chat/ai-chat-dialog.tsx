@@ -2,8 +2,9 @@
 
 import { useEffect, useRef } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { Bot, X } from "lucide-react"
+import { Bot, X, Trash2, AlertCircle } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { MessageList } from "./message-list"
 import { MessageInput } from "./message-input"
 import type { Message } from "./ai-chat"
@@ -14,9 +15,19 @@ interface AiChatDialogProps {
   messages: Message[]
   onSendMessage: (content: string) => void
   isLoading: boolean
+  error: string | null
+  onClearConversation: () => void
 }
 
-export function AiChatDialog({ isOpen, onClose, messages, onSendMessage, isLoading }: AiChatDialogProps) {
+export function AiChatDialog({
+  isOpen,
+  onClose,
+  messages,
+  onSendMessage,
+  isLoading,
+  error,
+  onClearConversation,
+}: AiChatDialogProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Scroll to bottom when new messages are added
@@ -44,20 +55,40 @@ export function AiChatDialog({ isOpen, onClose, messages, onSendMessage, isLoadi
                   <Bot className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Event Assistant</h3>
-                  <p className="text-xs text-muted-foreground">AI-powered help</p>
+                  <h3 className="font-semibold">EventBuddy</h3>
+                  <p className="text-xs text-muted-foreground">AI-powered assistant</p>
                 </div>
               </div>
-              <button
-                onClick={onClose}
-                className="rounded-full p-1.5 text-muted-foreground hover:bg-muted"
-                aria-label="Close chat"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClearConversation}
+                  className="h-8 w-8 rounded-full"
+                  title="Clear conversation"
+                >
+                  <Trash2 className="h-4 w-4 text-muted-foreground" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-8 w-8 rounded-full"
+                  title="Close chat"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto p-0" ref={containerRef}>
               <MessageList messages={messages} />
+
+              {error && (
+                <div className="mx-4 my-2 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800/30 dark:bg-red-900/20 dark:text-red-400">
+                  <AlertCircle className="h-4 w-4" />
+                  <p>{error}</p>
+                </div>
+              )}
             </CardContent>
             <CardFooter className="border-t bg-muted/50 p-3">
               <MessageInput onSendMessage={onSendMessage} isLoading={isLoading} />

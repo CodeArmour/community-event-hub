@@ -1,8 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { toast } from "@/components/ui/toast"
 import { AiChatButton } from "./ai-chat-button"
 import { AiChatDialog } from "./ai-chat-dialog"
+import { generateAIResponse } from "@/actions/ai-chat"
 
 export type Message = {
   id: string
@@ -11,17 +13,50 @@ export type Message = {
   timestamp: Date
 }
 
-export function AiChat() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
+// Function to load messages from localStorage
+const loadMessages = (): Message[] => {
+  if (typeof window === "undefined") return []
+
+  try {
+    const saved = localStorage.getItem("ai-chat-messages")
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      return parsed.map((msg: any) => ({
+        ...msg,
+        timestamp: new Date(msg.timestamp),
+      }))
+    }
+  } catch (error) {
+    console.error("Error loading messages:", error)
+  }
+
+  return [
     {
       id: "welcome",
-      content: "Hello! I'm your event assistant. How can I help you today?",
+      content: "Hello! I'm EventBuddy, your event assistant. How can I help you today?",
       role: "assistant",
       timestamp: new Date(),
     },
-  ])
+  ]
+}
+
+export function AiChat() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Load messages from localStorage on component mount
+  useEffect(() => {
+    setMessages(loadMessages())
+  }, [])
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem("ai-chat-messages", JSON.stringify(messages))
+    }
+  }, [messages])
 
   const toggleChat = () => {
     setIsOpen(!isOpen)
@@ -46,38 +81,57 @@ export function AiChat() {
 
     // Set loading state
     setIsLoading(true)
+    setError(null)
 
     try {
-      // Simulate AI response delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Format messages for the API (excluding the welcome message if it's the first one)
+      const messagesToSend = messages
+        .filter((msg) => msg.id !== "welcome" || messages.length === 1)
+        .map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        }))
 
-      // Generate a response based on the user's message
-      let response = ""
+      // Add the new user message
+      messagesToSend.push({
+        role: "user" as const,
+        content,
+      })
 
-      if (content.toLowerCase().includes("event")) {
-        response =
-          "I can help you find events, create events, or answer questions about existing events. What specifically would you like to know?"
-      } else if (content.toLowerCase().includes("register") || content.toLowerCase().includes("sign up")) {
-        response =
-          "To register for an event, navigate to the event page and click the 'Register' button. You'll need to be signed in to complete registration."
-      } else if (content.toLowerCase().includes("create") || content.toLowerCase().includes("new event")) {
-        response =
-          "To create a new event, go to the Admin Dashboard and click 'Create New Event'. You'll need admin privileges to do this."
-      } else if (content.toLowerCase().includes("hello") || content.toLowerCase().includes("hi")) {
-        response = "Hello there! How can I assist you with community events today?"
+      // Call the OpenAI API through our server action
+      const response = await generateAIResponse(messagesToSend)
+
+      if (response.success && response.data) {
+        // Add AI response
+        addMessage(response.data, "assistant")
       } else {
-        response =
-          "I'm here to help with anything related to community events. You can ask about finding events, event details, registration, or creating new events."
+        throw new Error(response.error || "Failed to generate response")
       }
-
-      // Add AI response
-      addMessage(response, "assistant")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating response:", error)
-      addMessage("I'm sorry, I encountered an error. Please try again later.", "assistant")
+      setError(error.message || "Something went wrong. Please try again.")
+      toast.error({
+        title: "AI Chat Error",
+        description: error.message || "Failed to generate a response. Please try again.",
+      })
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const clearConversation = () => {
+    const newWelcomeMessage = {
+      id: "welcome-" + Date.now(),
+      content: "Hello! I'm EventBuddy, your event assistant. How can I help you today?",
+      role: "assistant" as const,
+      timestamp: new Date(),
+    }
+    setMessages([newWelcomeMessage])
+    localStorage.setItem("ai-chat-messages", JSON.stringify([newWelcomeMessage]))
+    toast.info({
+      title: "Conversation Cleared",
+      description: "Your chat history has been cleared.",
+    })
   }
 
   return (
@@ -89,6 +143,8 @@ export function AiChat() {
         messages={messages}
         onSendMessage={handleSendMessage}
         isLoading={isLoading}
+        error={error}
+        onClearConversation={clearConversation}
       />
     </>
   )

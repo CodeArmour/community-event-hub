@@ -45,7 +45,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Type your message..."
+        placeholder={isLoading ? "AI is thinking..." : "Type your message..."}
         className="min-h-10 flex-1 resize-none rounded-xl"
         disabled={isLoading}
       />
