@@ -1,34 +1,16 @@
-'use server';
+"use server"
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { revalidatePath } from "next/cache";
-import { auth } from "@/app/auth";
-import { prisma } from "@/lib/prisma";
-import { 
-  getDashboardStats, 
-  getRecentEvents, 
-  getPopularEvents,
-  getAllUsers,
-  getAllEvents
-} from "./admin-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai"
+import { revalidatePath } from "next/cache"
+import { auth } from "@/app/auth"
+import { getDashboardStats, getRecentEvents, getPopularEvents, getAllUsers, getAllEvents } from "./admin-ai"
 
-import {
-  getCurrentAdmin,
-  updateAdminProfile,
-  updateNotificationPreferences,
-  updateAdminPassword,
-  updateTwoFactorAuth,
-} from './users';
+import { getCurrentAdmin } from "./users"
 
-import {
-  getCurrentUserForProfile,
-  getAllEventCategories,
-  updateUserProfile,
-  updateUserPassword,
-} from './profile';
+import { getAllEventCategories } from "./profile"
 
 // Initialize the Google AI client
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 // Base system prompt for all users
 const BASE_PROMPT = `
@@ -44,8 +26,15 @@ The application allows users to:
 Be helpful, concise, and friendly. If you don't know something specific about the application, 
 you can make reasonable assumptions based on typical event platforms.
 
+When displaying structured data like user lists, format your response using markdown:
+- Use bullet points for lists
+- Use tables for tabular data
+- Use bold text for emphasis
+- Use headings for sections (### for headings)
+- Format user roles with appropriate emphasis (e.g., **ADMIN** or **USER**)
+
 Current date: ${new Date().toLocaleDateString()}
-`;
+`
 
 // Additional prompt content for admins
 const ADMIN_PROMPT_EXTENSION = `
@@ -56,92 +45,95 @@ When the admin asks for statistics or insights, refer to the data in the CONTEXT
 of your prompt, which contains real statistics from the platform database.
 
 If you don't have certain data, suggest what specific statistics might answer their question.
-`;
+
+When displaying user information, format it clearly with:
+- User name in bold
+- Email in parentheses
+- Role clearly marked (e.g., **ADMIN** or **USER**)
+- Organize users by role when listing multiple users
+`
 
 export async function generateAIResponse(messages: { role: "user" | "assistant"; content: string }[]) {
   try {
     if (!process.env.GEMINI_API_KEY) {
-      throw new Error("Gemini API key is not configured");
+      throw new Error("Gemini API key is not configured")
     }
 
     // Check user authentication and role
-    const session = await auth();
-    const isAdmin = session?.user?.role === "ADMIN";
-    
+    const session = await auth()
+    const isAdmin = session?.user?.role === "ADMIN"
+
     // Select appropriate system prompt based on user role
-    let systemPrompt = BASE_PROMPT;
+    let systemPrompt = BASE_PROMPT
     if (isAdmin) {
-      systemPrompt = `${BASE_PROMPT}\n\n${ADMIN_PROMPT_EXTENSION}`;
+      systemPrompt = `${BASE_PROMPT}\n\n${ADMIN_PROMPT_EXTENSION}`
     }
-    
+
     // Get the model
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-pro"
-    });
-    
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-pro",
+    })
+
     // Initialize context data object (will be populated only for admins)
-    let contextData = {};
-    
+    let contextData = {}
+
     // If admin, fetch relevant data based on the query
     if (isAdmin) {
-      const lastUserMessage = messages[messages.length - 1].content.toLowerCase();
-      
+      const lastUserMessage = messages[messages.length - 1].content.toLowerCase()
+
       // Determine what data to fetch based on the user's query
       if (
-        lastUserMessage.includes("dashboard") || 
-        lastUserMessage.includes("overview") || 
+        lastUserMessage.includes("dashboard") ||
+        lastUserMessage.includes("overview") ||
         lastUserMessage.includes("statistics") ||
         lastUserMessage.includes("stats")
       ) {
-        contextData = await getDashboardStats();
+        contextData = await getDashboardStats()
       }
-      
-      if (
-        lastUserMessage.includes("recent event") || 
-        lastUserMessage.includes("new event")
-      ) {
-        const recentEvents = await getRecentEvents();
-        contextData = { ...contextData, recentEvents };
+
+      if (lastUserMessage.includes("recent event") || lastUserMessage.includes("new event")) {
+        const recentEvents = await getRecentEvents()
+        contextData = { ...contextData, recentEvents }
       }
-      
+
       if (
-        lastUserMessage.includes("popular") || 
+        lastUserMessage.includes("popular") ||
         lastUserMessage.includes("top event") ||
         lastUserMessage.includes("best event")
       ) {
-        const popularEvents = await getPopularEvents();
-        contextData = { ...contextData, popularEvents };
+        const popularEvents = await getPopularEvents()
+        contextData = { ...contextData, popularEvents }
       }
-      
+
       // If admin is asking about data but we haven't fetched anything specific yet,
       // get dashboard stats as a default
       if (
-        Object.keys(contextData).length === 0 && 
-        (lastUserMessage.includes("data") || 
-         lastUserMessage.includes("numbers") || 
-         lastUserMessage.includes("metrics") ||
-         lastUserMessage.includes("how many"))
+        Object.keys(contextData).length === 0 &&
+        (lastUserMessage.includes("data") ||
+          lastUserMessage.includes("numbers") ||
+          lastUserMessage.includes("metrics") ||
+          lastUserMessage.includes("how many"))
       ) {
-        contextData = await getDashboardStats();
+        contextData = await getDashboardStats()
       }
-      
+
       if (
-        lastUserMessage.includes('profile') ||
-        lastUserMessage.includes('my info') ||
-        lastUserMessage.includes('personal') ||
-        lastUserMessage.includes('settings')
+        lastUserMessage.includes("profile") ||
+        lastUserMessage.includes("my info") ||
+        lastUserMessage.includes("personal") ||
+        lastUserMessage.includes("settings")
       ) {
-        const userProfile = await getCurrentAdmin(); // fetch the admin's profile
-        contextData = { ...contextData, userProfile };
+        const userProfile = await getCurrentAdmin() // fetch the admin's profile
+        contextData = { ...contextData, userProfile }
       }
-    
+
       if (
-        lastUserMessage.includes('categories') ||
-        lastUserMessage.includes('interests') ||
-        lastUserMessage.includes('preferences')
+        lastUserMessage.includes("categories") ||
+        lastUserMessage.includes("interests") ||
+        lastUserMessage.includes("preferences")
       ) {
-        const eventCategories = await getAllEventCategories();
-        contextData = { ...contextData, eventCategories };
+        const eventCategories = await getAllEventCategories()
+        contextData = { ...contextData, eventCategories }
       }
 
       if (
@@ -149,38 +141,38 @@ export async function generateAIResponse(messages: { role: "user" | "assistant";
         lastUserMessage.includes("all users") ||
         lastUserMessage.includes("user list")
       ) {
-        const allUsers = await getAllUsers();
-        contextData = { ...contextData, allUsers };
+        const allUsers = await getAllUsers()
+        contextData = { ...contextData, allUsers }
       }
-    
+
       if (
         lastUserMessage.includes("events") ||
         lastUserMessage.includes("all events") ||
         lastUserMessage.includes("event list")
       ) {
-        const allEvents = await getAllEvents();
-        contextData = { ...contextData, allEvents };
+        const allEvents = await getAllEvents()
+        contextData = { ...contextData, allEvents }
       }
     }
-    
+
     // Format messages for Gemini's content generation
-    const formattedMessages = messages.map(msg => ({
+    const formattedMessages = messages.map((msg) => ({
       role: msg.role === "user" ? "user" : "model",
-      parts: [{ text: msg.content }]
-    }));
-    
+      parts: [{ text: msg.content }],
+    }))
+
     // Add system message at the beginning
     formattedMessages.unshift({
       role: "model",
-      parts: [{ text: systemPrompt }]
-    });
-    
+      parts: [{ text: systemPrompt }],
+    })
+
     // If admin with context data, add it to the messages
     if (isAdmin && Object.keys(contextData).length > 0) {
       formattedMessages.push({
         role: "model",
-        parts: [{ text: `CONTEXT: ${JSON.stringify(contextData, null, 2)}` }]
-      });
+        parts: [{ text: `CONTEXT: ${JSON.stringify(contextData, null, 2)}` }],
+      })
     }
 
     // Generate content
@@ -191,19 +183,19 @@ export async function generateAIResponse(messages: { role: "user" | "assistant";
         maxOutputTokens: 800,
         topP: 1,
       },
-    });
+    })
 
-    const responseText = result.response.text();
+    const responseText = result.response.text()
 
     // Revalidate the path to ensure fresh data
-    revalidatePath("/");
+    revalidatePath("/")
 
-    return { success: true, data: responseText };
+    return { success: true, data: responseText }
   } catch (error: any) {
-    console.error("Error generating AI response:", error);
+    console.error("Error generating AI response:", error)
     return {
       success: false,
       error: error.message || "Failed to generate AI response",
-    };
+    }
   }
 }

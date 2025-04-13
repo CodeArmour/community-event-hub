@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Bot, User } from "lucide-react"
+import ReactMarkdown from "react-markdown"
 import type { Message } from "./ai-chat"
 
 interface MessageListProps {
@@ -31,7 +32,52 @@ export function MessageList({ messages }: MessageListProps) {
                 : "bg-gradient-to-r from-primary to-secondary text-white"
             }`}
           >
-            <p className="text-sm">{message.content}</p>
+            {message.role === "assistant" ? (
+              <div className="chat-message-content">
+                <ReactMarkdown
+                  components={{
+                    ul: ({ node, ...props }) => <ul className="list-disc pl-5 my-2" {...props} />,
+                    ol: ({ node, ...props }) => <ol className="list-decimal pl-5 my-2" {...props} />,
+                    li: ({ node, ...props }) => <li className="my-1" {...props} />,
+                    p: ({ node, ...props }) => <p className="mb-2" {...props} />,
+                    h3: ({ node, ...props }) => <h3 className="text-md font-bold my-2" {...props} />,
+                    h4: ({ node, ...props }) => <h4 className="text-sm font-bold my-1" {...props} />,
+                    strong: ({ node, ...props }) => <strong className="font-bold" {...props} />,
+                    table: ({ node, ...props }) => (
+                      <div className="overflow-x-auto my-2">
+                        <table className="min-w-full border-collapse" {...props} />
+                      </div>
+                    ),
+                    thead: ({ node, ...props }) => <thead className="bg-muted/50" {...props} />,
+                    tbody: ({ node, ...props }) => <tbody className="divide-y divide-muted" {...props} />,
+                    tr: ({ node, ...props }) => <tr className="hover:bg-muted/30" {...props} />,
+                    th: ({ node, ...props }) => (
+                      <th className="px-2 py-1 text-left text-xs font-medium text-muted-foreground" {...props} />
+                    ),
+                    td: ({ node, ...props }) => <td className="px-2 py-1 text-sm" {...props} />,
+                    code: ({ node, inline, ...props }) =>
+                      inline ? (
+                        <code className="rounded bg-muted/70 px-1 py-0.5 text-xs font-mono" {...props} />
+                      ) : (
+                        <code
+                          className="block bg-muted/70 p-2 rounded text-xs font-mono my-2 overflow-x-auto"
+                          {...props}
+                        />
+                      ),
+                    blockquote: ({ node, ...props }) => (
+                      <blockquote
+                        className="border-l-2 border-muted-foreground/30 pl-4 italic text-muted-foreground my-2"
+                        {...props}
+                      />
+                    ),
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
+              </div>
+            ) : (
+              <p className="text-sm">{message.content}</p>
+            )}
             <p className="mt-1 text-right text-xs opacity-70">
               {new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </p>
