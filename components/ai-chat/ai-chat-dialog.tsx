@@ -42,13 +42,13 @@ export function AiChatDialog({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed bottom-24 right-6 z-50 w-full max-w-md"
+          className="fixed bottom-0 right-0 z-50 w-full sm:bottom-24 sm:right-6 sm:w-[calc(100%-3rem)] md:w-[450px]"
           initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.95 }}
           transition={{ duration: 0.2 }}
         >
-          <Card className="flex h-[500px] max-h-[80vh] flex-col overflow-hidden border-2 shadow-xl">
+          <Card className="flex h-[100vh] flex-col overflow-hidden border-0 rounded-none sm:h-[500px] sm:max-h-[80vh] sm:border-2 sm:rounded-lg shadow-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-primary/10 to-secondary/10 p-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-primary to-secondary">

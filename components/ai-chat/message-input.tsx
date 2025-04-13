@@ -46,13 +46,13 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={isLoading ? "AI is thinking..." : "Type your message..."}
-        className="min-h-10 flex-1 resize-none rounded-xl"
+        className="min-h-10 flex-1 resize-none rounded-xl text-sm sm:text-base"
         disabled={isLoading}
       />
       <Button
         type="submit"
         size="icon"
-        className="h-10 w-10 rounded-xl bg-gradient-to-r from-primary to-secondary"
+        className="h-10 w-10 flex-shrink-0 rounded-xl bg-gradient-to-r from-primary to-secondary"
         disabled={!message.trim() || isLoading}
       >
         {isLoading ? (

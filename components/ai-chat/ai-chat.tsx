@@ -98,7 +98,7 @@ export function AiChat() {
         content,
       })
 
-      // Call the OpenAI API through our server action
+      // Call the AI API through our server action
       const response = await generateAIResponse(messagesToSend)
 
       if (response.success && response.data) {
@@ -121,7 +121,7 @@ export function AiChat() {
 
   const clearConversation = () => {
     const newWelcomeMessage = {
-      id: "welcome-" + Date.now(),
+      id: "welcome",
       content: "Hello! I'm EventBuddy, your event assistant. How can I help you today?",
       role: "assistant" as const,
       timestamp: new Date(),

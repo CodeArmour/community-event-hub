@@ -26,7 +26,7 @@ export function MessageList({ messages }: MessageListProps) {
             </div>
           )}
           <div
-            className={`rounded-2xl px-4 py-2 max-w-[80%] ${
+            className={`rounded-2xl px-3 py-2 sm:px-4 max-w-[85%] sm:max-w-[80%] ${
               message.role === "assistant"
                 ? "bg-muted text-foreground"
                 : "bg-gradient-to-r from-primary to-secondary text-white"
