@@ -12,6 +12,15 @@ import { getEvents } from "@/actions/event";
 import type { Event } from "@/lib/types";
 import { SessionProvider, useSession } from "next-auth/react";
 
+// Helper function to combine date and time strings into a JavaScript Date object
+function combineDateTime(dateStr: string | Date, timeStr: string): Date {
+  const eventDate = new Date(dateStr);
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  
+  eventDate.setHours(hours, minutes, 0, 0);
+  return eventDate;
+}
+
 // Create a separate component for the main content to use useSession hook
 function HomePageContent() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -38,15 +47,27 @@ function HomePageContent() {
 
     // Apply tab filters
     if (tab === "upcoming") {
-      list = list.filter((e) => new Date(e.date) > now);
+      // Filter for upcoming events by combining date and time
+      list = list.filter((e) => {
+        const eventStartTime = combineDateTime(e.date, e.time);
+        return eventStartTime >= now;
+      });
     }
     if (tab === "popular") {
-      list = list.filter((e) => new Date(e.date) > now);
+      // Also update popular tab to use the same datetime logic
+      list = list.filter((e) => {
+        const eventStartTime = combineDateTime(e.date, e.time);
+        return eventStartTime >= now;
+      });
       list = list.filter((e) => e.attendees > 0);
       list = list.sort((a, b) => b.attendees - a.attendees).slice(0, 10);
     }
     if (tab === "nearby") {
-      list = list.filter((e) => new Date(e.date) > now);
+      // And update nearby tab too
+      list = list.filter((e) => {
+        const eventStartTime = combineDateTime(e.date, e.time);
+        return eventStartTime >= now;
+      });
       list = list.filter((e) => e.location === session?.user?.location);
     }
 
@@ -59,9 +80,16 @@ function HomePageContent() {
     return list;
   }, [events, tab, searchTerm, session?.user?.location]);
 
-  const paginated = useMemo(() => {
+  // Sort events by datetime (nearest first)
+  const sortedAndPaginated = useMemo(() => {
+    const sorted = [...filtered].sort((a, b) => {
+      const dateTimeA = combineDateTime(a.date, a.time).getTime();
+      const dateTimeB = combineDateTime(b.date, b.time).getTime();
+      return dateTimeA - dateTimeB;
+    });
+    
     const start = (page - 1) * itemsPerPage;
-    return filtered.slice(start, start + itemsPerPage);
+    return sorted.slice(start, start + itemsPerPage);
   }, [filtered, page]);
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
@@ -153,7 +181,7 @@ function HomePageContent() {
           </TabsList>
 
           <TabsContent value={tab}>
-            <EventList events={paginated} />
+            <EventList events={sortedAndPaginated} />
             {totalPages > 1 && (
               <div className="mt-6 flex justify-center gap-2">
                 {Array.from({ length: totalPages }).map((_, i) => (
