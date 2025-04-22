@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
@@ -81,10 +82,15 @@ export default function Navbar({ user }: { user?: User }) {
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center text-xl font-bold">
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              EventHub
-            </span>
+          <Link href="/" className="flex items-center space-x-2 h-30 w-30 hover:opacity-80">
+            {/* Logo */}
+            <Image
+              src="/logo-events-hub.png"
+              alt="EventHub Logo"
+              width={120}
+              height={120}
+              priority
+            />
           </Link>
           <nav className="hidden md:block">
             <ul className="flex gap-6">
