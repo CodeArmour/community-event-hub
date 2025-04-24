@@ -29,9 +29,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <div className="flex min-h-screen flex-col">
               <Navbar user={user}/>
               <main className="flex-1">
-                <SessionProvider>
                 {children}
-                </SessionProvider>
                 </main>
               <footer className="border-t py-6">
                 <div className="container mx-auto px-4 text-center">
